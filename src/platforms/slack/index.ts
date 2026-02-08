@@ -15,6 +15,7 @@ import { groupsCommand } from "./groups/index.ts";
 import { emojiCommand } from "./emoji/index.ts";
 import { teamCommand } from "./team/index.ts";
 import { apiCommand } from "./api.ts";
+import { versionCommand } from "./version.ts";
 
 export const slackCommand = defineCommand({
   meta: { name: "slack", description: "Slack platform commands" },
@@ -35,5 +36,6 @@ export const slackCommand = defineCommand({
     emoji: emojiCommand,
     team: teamCommand,
     api: apiCommand,
+    version: versionCommand,
   },
 });

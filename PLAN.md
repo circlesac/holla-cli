@@ -269,8 +269,7 @@ holla-cli/
 │   │       │   ├── index.ts
 │   │       │   ├── login.ts
 │   │       │   ├── logout.ts
-│   │       │   ├── status.ts
-│   │       │   └── switch.ts
+│   │       │   └── status.ts
 │   │       ├── channels/         # → conversations.*
 │   │       │   ├── index.ts
 │   │       │   ├── list.ts

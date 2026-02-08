@@ -3,7 +3,6 @@ export type OutputFormat = "table" | "json" | "plain";
 export interface HollaConfig {
   slack?: {
     outputFormat?: OutputFormat;
-    defaultWorkspace?: string;
   };
 }
 

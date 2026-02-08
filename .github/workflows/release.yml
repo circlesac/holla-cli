@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: ubuntu-latest
+            target: linux-arm64
+            bun_args: "--target=bun-linux-arm64"
+          - os: macos-latest
+            target: darwin-x64
+            bun_args: "--target=bun-darwin-x64"
+          - os: macos-latest
+            target: darwin-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+
+      - name: Build binary
+        run: |
+          bun build --compile ${{ matrix.bun_args || '' }} src/index.ts --outfile holla
+          tar czf holla-${{ matrix.target }}.tar.gz holla
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holla-${{ matrix.target }}
+          path: holla-${{ matrix.target }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: holla-*.tar.gz
