@@ -21,14 +21,12 @@ jobs:
 
       - run: bun run test
 
-      - run: npm install -g @circlesac/oneup
-
       - name: Bump version
         id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          VERSION=$(oneup version --target package.json --target npm/package.json)
+          VERSION=$(npx --yes @circlesac/oneup version --target package.json --target npm/package.json)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Push version commit
