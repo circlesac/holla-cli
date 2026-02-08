@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
@@ -18,13 +19,18 @@ export const sendCommand = defineCommand({
     },
     message: {
       type: "string",
-      description: "Message text (reads from stdin if omitted)",
+      description: "Message text or markdown (reads from stdin if omitted)",
       alias: "m",
+    },
+    plain: {
+      type: "boolean",
+      description: "Send as plain text without markdown conversion",
+      default: false,
     },
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token } = await getToken(args.workspace, true);
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel);
 
@@ -39,9 +45,14 @@ export const sendCommand = defineCommand({
         process.exit(1);
       }
 
-      const result = await client.chat.postMessage({ channel, text });
-
-      console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+      if (args.plain) {
+        const result = await client.chat.postMessage({ channel, text });
+        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+      } else {
+        const blocks = await markdownToBlocks(text);
+        const result = await client.chat.postMessage({ channel, text, blocks });
+        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+      }
     } catch (error) {
       console.error(
         `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,

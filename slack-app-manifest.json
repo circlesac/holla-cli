@@ -45,13 +45,33 @@
         "usergroups:write"
       ],
       "user": [
+        "channels:history",
+        "channels:read",
+        "channels:write",
+        "chat:write",
+        "dnd:read",
+        "dnd:write",
+        "files:read",
+        "files:write",
+        "groups:history",
+        "groups:read",
+        "groups:write",
+        "im:history",
+        "im:read",
+        "im:write",
+        "pins:read",
+        "pins:write",
+        "reactions:read",
+        "reactions:write",
+        "reminders:read",
+        "reminders:write",
         "search:read",
         "stars:read",
         "stars:write",
-        "dnd:read",
-        "dnd:write",
+        "team:read",
         "users.profile:read",
-        "users.profile:write"
+        "users.profile:write",
+        "users:read"
       ]
     }
   },
