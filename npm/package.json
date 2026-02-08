@@ -1,0 +1,20 @@
+{
+  "bin": {
+    "holla": "bin/holla"
+  },
+  "description": "CLI tool that acts as you on messaging platforms",
+  "files": [
+    "bin/holla",
+    "install.js"
+  ],
+  "license": "MIT",
+  "name": "@circlesac/holla",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/circlesac/holla-cli"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "version": "26.2.0"
+}

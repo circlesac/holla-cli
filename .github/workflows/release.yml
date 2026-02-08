@@ -1,0 +1,156 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run test
+
+      - run: npm install -g @circlesac/oneup
+
+      - name: Bump version
+        id: bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          VERSION=$(oneup version --target package.json --target npm/package.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Push version commit
+        run: git push origin main
+
+  build:
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-darwin-x64
+            name: holla-darwin-x64
+          - target: bun-darwin-arm64
+            name: holla-darwin-arm64
+          - target: bun-linux-x64
+            name: holla-linux-x64
+          - target: bun-linux-arm64
+            name: holla-linux-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build binary
+        run: |
+          bun build --compile --target=${{ matrix.target }} --outfile=holla src/index.ts
+          tar czf ${{ matrix.name }}.tar.gz holla
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}.tar.gz
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          generate_release_notes: true
+          files: artifacts/**/*.tar.gz
+
+  publish-npm:
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish to npm
+        run: |
+          cd npm
+          npm publish --access public
+
+  publish-homebrew:
+    needs: [version, release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Update Homebrew formula
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+
+          SHA_DARWIN_ARM64=$(shasum -a 256 artifacts/holla-darwin-arm64/*.tar.gz | cut -d' ' -f1)
+          SHA_DARWIN_X64=$(shasum -a 256 artifacts/holla-darwin-x64/*.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_ARM64=$(shasum -a 256 artifacts/holla-linux-arm64/*.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_X64=$(shasum -a 256 artifacts/holla-linux-x64/*.tar.gz | cut -d' ' -f1)
+
+          git clone https://x-access-token:${GH_TOKEN}@github.com/circlesac/homebrew-tap.git
+          cd homebrew-tap
+          cp ../homebrew/holla.rb.template Formula/holla.rb
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" Formula/holla.rb
+          sed -i "s/SHA_DARWIN_ARM64/${SHA_DARWIN_ARM64}/g" Formula/holla.rb
+          sed -i "s/SHA_DARWIN_X64/${SHA_DARWIN_X64}/g" Formula/holla.rb
+          sed -i "s/SHA_LINUX_ARM64/${SHA_LINUX_ARM64}/g" Formula/holla.rb
+          sed -i "s/SHA_LINUX_X64/${SHA_LINUX_X64}/g" Formula/holla.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/holla.rb
+          git commit -m "Update holla to ${VERSION}"
+          git push
+
+  push-tag:
+    needs: [version, publish-npm, publish-homebrew]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Push tag
+        run: git push origin v${{ needs.version.outputs.version }}

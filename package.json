@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@circlesac/mack": "^26.2.0",
+    "@slack/web-api": "^7.13.0",
+    "citty": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vitest": "^4.0.18"
+  },
+  "module": "src/index.ts",
+  "name": "holla-cli",
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "private": true,
+  "scripts": {
+    "build": "bun build --compile --outfile=dist/holla src/index.ts",
+    "dev": "bun run src/index.ts",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "version": "26.2.0"
+}

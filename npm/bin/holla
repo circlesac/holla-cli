@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+const { execFileSync, existsSync } = require("child_process") || {};
+const { join } = require("path");
+
+const bin = join(__dirname, "native", "holla");
+
+if (!existsSync(bin)) {
+  require("../install.js");
+}
+
+try {
+  execFileSync(bin, process.argv.slice(2), { stdio: "inherit" });
+} catch (err) {
+  process.exit(err.status ?? 1);
+}
