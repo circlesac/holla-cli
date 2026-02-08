@@ -21,7 +21,7 @@ export const addCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace, true);
+      const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       const result = await client.reminders.add({

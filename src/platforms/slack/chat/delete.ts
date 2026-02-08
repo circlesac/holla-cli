@@ -24,7 +24,7 @@ export const deleteCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace, true);
+      const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel);
 

@@ -73,7 +73,6 @@ export async function removeWorkspace(workspace: string): Promise<boolean> {
 
 export async function getToken(
   workspace: string | undefined,
-  preferUser = false,
 ): Promise<{ token: string; workspace: string }> {
   // Check environment variable first
   const envToken = process.env["SLACK_TOKEN"];
@@ -108,9 +107,8 @@ export async function getToken(
     );
   }
 
-  const token = preferUser
-    ? creds.userToken ?? creds.botToken
-    : creds.botToken ?? creds.userToken;
+  // User token first — holla-cli acts as you, not as a bot
+  const token = creds.userToken ?? creds.botToken;
 
   if (!token) {
     throw new Error(

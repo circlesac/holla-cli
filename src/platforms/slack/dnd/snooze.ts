@@ -16,7 +16,7 @@ export const snoozeCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace, true);
+      const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       const numMinutes = parseInt(args.minutes, 10);

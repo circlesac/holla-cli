@@ -4,7 +4,7 @@
 
 ## Overview
 
-`holla` is a CLI tool for interacting with messaging platforms. The first platform is **Slack**. The architecture supports adding more platforms (e.g., Discord, Teams) later via `holla <provider> <command> <action>` pattern.
+`holla` is a CLI tool that acts as **you** on messaging platforms. Every action (sending messages, reacting, joining channels) is performed as the authenticated user, not as a bot. The first platform is **Slack**. The architecture supports adding more platforms (e.g., Discord, Teams) later via `holla <provider> <command> <action>` pattern.
 
 **Hybrid approach**: Ergonomic commands for common operations + raw API passthrough for everything else.
 
@@ -39,9 +39,8 @@ holla slack api files.remote.add --external-id X --title "Report"
 | Language | **TypeScript** | Company standard, strict mode |
 | CLI Framework | **citty** | Used in shh-env, lightweight, TypeScript-first |
 | Slack SDK | **@slack/web-api** | Official SDK (per API integration guide: always prefer official SDKs) |
-| Markdown to Blocks | **@circlesac/mock** | Convert Markdown to Slack Block Kit via `markdownToBlocks` (module not published yet; from circlesac/mack repo) |
-| Testing | **bun:test** | Built-in, no extra deps |
-| Linting | **@circlesac/lint** | Company standard |
+| Markdown to Blocks | **@circlesac/mack** | Convert Markdown to Slack Block Kit via `markdownToBlocks` |
+| Testing | **vitest** | Company standard (see testing guide) |
 | Build | **bun build --compile** | Standalone binary distribution |
 
 ## Architecture
@@ -72,7 +71,7 @@ holla
 │   │   ├── topic                      # → conversations.setTopic
 │   │   └── purpose                    # → conversations.setPurpose
 │   ├── chat
-│   │   ├── send                       # → chat.postMessage
+│   │   ├── send                       # → chat.postMessage (markdown → blocks)
 │   │   ├── whisper                    # → chat.postEphemeral
 │   │   ├── edit                       # → chat.update
 │   │   ├── delete                     # → chat.delete
@@ -144,6 +143,121 @@ holla
 └── version                            # Show holla-cli version
 ```
 
+### Key Design Decisions
+
+#### 1. User-token-first architecture
+
+holla-cli acts as **you**, not as a bot. All commands use the user token (`xoxp-`). The bot token exists only because Slack OAuth v2 requires a bot_user for app installation, but it is never used for API calls.
+
+This means:
+- Messages you send appear as **your name and avatar**, not "holla-cli"
+- Reactions, pins, channel joins — all attributed to you
+- Search, stars, DND, profile — only possible with user tokens anyway
+- One token to manage, simpler credential model
+
+**Bot scopes are minimal** — just enough for the app to install. All real scopes are on the user side.
+
+#### 2. Strict 3-level routing
+
+citty routes exactly 3 levels: `<provider>` → `<command>` → `<action>`. Everything after `<action>` is named flags. No positional arguments, no deeper nesting.
+
+#### 3. Hybrid command model
+
+- **Ergonomic commands**: Human-friendly names, kebab-case, all named flags, formatted output
+- **Raw API passthrough** (`holla slack api <method>`): Any Slack method with `--key value` flags, always returns raw JSON
+- Ergonomic commands are added incrementally; `api` gives 100% coverage from day one
+
+#### 4. Authentication strategy
+
+Three ways to authenticate, in order of preference:
+
+**A. OAuth flow (default)** — one command, gets the user token:
+```
+holla slack auth login
+> Opening browser for Slack authorization...
+> Waiting for callback on http://localhost:9876/callback...
+✓ Authorized! Tokens saved for "Circles Inc" (T01234567)
+```
+
+Flow:
+1. CLI starts local HTTP server on port 9876
+2. Opens browser to `https://slack.com/oauth/v2/authorize` with `user_scope` (all needed scopes)
+3. User clicks "Allow"
+4. Slack redirects to `localhost:9876/callback?code=XXX`
+5. CLI exchanges code for tokens via `oauth.v2.access`
+6. User token (`xoxp-`) extracted from `authed_user.access_token` and stored
+
+Ships with a Circles-owned Slack app (client_id/secret baked in). Power users can override with `--client-id` / `--client-secret`.
+
+**B. Manual token paste** — for quick setup or custom apps:
+```
+holla slack auth login --token xoxp-1234-...
+```
+Auto-detects token type from prefix (`xoxp-` = user, `xoxb-` = bot).
+
+**C. Environment variable** — for CI/scripting:
+```
+SLACK_TOKEN=xoxp-... holla slack chat send --channel #general --message "Deploy done"
+```
+
+#### 5. Credential storage
+
+File-based storage at `~/.config/holla/credentials/<workspace>.json`.
+
+**Workspace selection:**
+- 1 workspace → auto-selected, no `--workspace` needed
+- Multiple workspaces → must pass `--workspace <name>`
+
+```bash
+# One workspace — just works
+holla slack channels list
+
+# Multiple — must specify
+holla slack channels list --workspace circles
+```
+
+#### 6. Output modes
+
+Every ergonomic command supports three output modes:
+- **table** (default) — human-friendly, colored
+- **json** (`--json`) — machine-readable, to stdout
+- **plain** (`--plain`) — stable tab-separated, no color
+
+The `api` passthrough command always outputs raw JSON.
+
+Global flags: `--json`, `--plain`, `--workspace`
+
+#### 7. Markdown support in messages
+
+`holla slack chat send` converts Markdown to Slack Block Kit via `@circlesac/mack`'s `markdownToBlocks`. This keeps authoring simple while preserving rich formatting (headers, bold, italic, lists, code blocks, tables, links, images).
+
+Use `--plain` to skip conversion and send raw text.
+
+```bash
+# Markdown (default) — converted to Block Kit
+holla slack chat send --channel #general --message "# Deploy Complete\n\n- **API**: v2.1.0\n- **Status**: all green"
+
+# Plain text — no conversion
+holla slack chat send --channel #general --message "simple text" --plain
+
+# Pipe markdown from file
+cat report.md | holla slack chat send --channel #general
+```
+
+#### 8. Official Slack SDK
+
+Use `@slack/web-api` for all Slack API calls. No raw HTTP.
+
+```typescript
+import { WebClient } from "@slack/web-api";
+
+export function createSlackClient(token: string): WebClient {
+  return new WebClient(token);
+}
+```
+
+The raw `api` passthrough uses `client.apiCall(method, args)` directly.
+
 ### Naming Conventions
 
 #### Command names (Slack API namespace → ergonomic name)
@@ -188,41 +302,15 @@ All arguments after `<action>` are **named flags** (no positional arguments):
 | `--user` | `@` | User ID (`U01234567`) | `--user @john` |
 | No prefix | — | Passed as raw ID | `--channel C01234567` |
 
-### Raw API Passthrough (`holla slack api`)
-
-For any Slack Web API method not covered by ergonomic commands:
-
-```bash
-# Pass the exact Slack API method name + flags as key-value pairs
-holla slack api conversations.requestSharedInvite.approve --invite-id I123
-holla slack api admin.conversations.restrictAccess.addGroup --channel-id C123 --group-id S123
-holla slack api chat.scheduledMessages.list
-
-# Supports --body for raw JSON body
-holla slack api chat.postMessage --body '{"channel":"C123","text":"hello"}'
-
-# Output is always the raw JSON response from Slack
-```
-
-This ensures 100% Slack API coverage without implementing 150+ leaf commands.
-
 ### `#channel` and `@user` Name Resolution
 
 The CLI resolves human-friendly names to Slack IDs transparently:
 
 1. Strip `#` / `@` prefix
 2. Look up the name via `conversations.list` / `users.list`
-3. Cache results locally (`~/.config/holla/cache/`) with TTL (e.g., 5 min)
+3. Cache results locally (`~/.config/holla/cache/`) with TTL (5 min)
 4. Pass the resolved ID to the Slack API
 5. If no prefix, assume raw ID and pass through
-
-```bash
-holla slack chat send --channel #general --message "Hello!"
-# Resolves #general → C01234567, then calls chat.postMessage
-
-holla slack chat send --channel C01234567 --message "Hello!"
-# Passes C01234567 directly
-```
 
 ### Stdin Piping
 
@@ -243,15 +331,36 @@ Slack uses cursor-based pagination. Ergonomic commands handle it as:
 - `--cursor` — manual cursor for advanced use
 - JSON output includes `next_cursor` for scripting
 
-```bash
-holla slack channels list --limit 50
-holla slack channels list --all
-holla slack channels list --all --json | jq '.[].name'
-```
-
 ### Rate Limiting
 
-The `@slack/web-api` SDK handles rate limiting (HTTP 429) with automatic retries and backoff. No custom handling needed. The `--verbose` flag will log retry attempts.
+The `@slack/web-api` SDK handles rate limiting (HTTP 429) with automatic retries and backoff. No custom handling needed.
+
+### OAuth Scopes
+
+**Bot scopes** (minimal — required for app installation only):
+
+```
+channels:read
+```
+
+**User scopes** (all CLI functionality):
+
+```
+channels:history, channels:read, channels:write,
+chat:write,
+dnd:read, dnd:write,
+files:read, files:write,
+groups:history, groups:read, groups:write,
+im:history, im:read, im:write,
+pins:read, pins:write,
+reactions:read, reactions:write,
+reminders:read, reminders:write,
+search:read,
+stars:read, stars:write,
+team:read,
+users.profile:read, users.profile:write,
+users:read
+```
 
 ### Project Structure
 
@@ -265,26 +374,14 @@ holla-cli/
 │   │       ├── client.ts         # Slack WebClient factory
 │   │       ├── resolve.ts        # #channel / @user name resolution + cache
 │   │       ├── api.ts            # Raw API passthrough command
+│   │       ├── version.ts        # Slack connection info
 │   │       ├── auth/
 │   │       │   ├── index.ts
 │   │       │   ├── login.ts
 │   │       │   ├── logout.ts
 │   │       │   └── status.ts
 │   │       ├── channels/         # → conversations.*
-│   │       │   ├── index.ts
-│   │       │   ├── list.ts
-│   │       │   ├── info.ts
-│   │       │   ├── create.ts
-│   │       │   ├── history.ts
-│   │       │   ├── replies.ts
-│   │       │   └── ...
 │   │       ├── chat/             # → chat.*
-│   │       │   ├── index.ts
-│   │       │   ├── send.ts
-│   │       │   ├── whisper.ts
-│   │       │   ├── edit.ts
-│   │       │   ├── delete.ts
-│   │       │   └── ...
 │   │       ├── reactions/
 │   │       ├── search/
 │   │       ├── users/
@@ -299,221 +396,23 @@ holla-cli/
 │   │       └── team/
 │   ├── lib/
 │   │   ├── config.ts             # Config file read/write (~/.config/holla/)
-│   │   ├── credentials.ts        # Token storage (OS keychain via Bun.secrets)
+│   │   ├── credentials.ts        # Token storage (~/.config/holla/credentials/)
 │   │   ├── output.ts             # Output formatting (JSON / plain / table)
 │   │   └── errors.ts             # Structured error types
 │   └── types/
 │       └── index.ts              # Shared type definitions
 ├── tests/
-│   ├── cli.test.ts               # Integration tests
-│   ├── slack/                    # Slack command tests
-│   └── lib/                      # Library unit tests
+│   ├── tsconfig.json             # Extends root, adds vitest/globals
+│   ├── output.spec.ts
+│   ├── errors.spec.ts
+│   └── credentials.spec.ts
+├── slack-app-manifest.json       # Slack app manifest (source of truth for scopes)
+├── vitest.config.ts
 ├── package.json
 ├── tsconfig.json
 ├── .gitignore
 └── README.md
 ```
-
-### Key Design Decisions
-
-#### 1. Strict 3-level routing
-
-citty routes exactly 3 levels: `<provider>` → `<command>` → `<action>`. Everything after `<action>` is named flags. No positional arguments, no deeper nesting.
-
-#### 2. Hybrid command model
-
-- **Ergonomic commands**: Human-friendly names, kebab-case, all named flags, formatted output
-- **Raw API passthrough** (`holla slack api <method>`): Any Slack method with `--key value` flags, always returns raw JSON
-- Ergonomic commands are added incrementally; `api` gives 100% coverage from day one
-
-#### 3. Authentication strategy
-
-Three ways to authenticate, in order of preference:
-
-**A. OAuth flow (default)** — one command, gets both tokens:
-```
-holla slack auth login
-> Opening browser for Slack authorization...
-> Waiting for callback on http://localhost:9876/callback...
-✓ Authorized! Tokens saved for "Circles Inc" (T01234567)
-  Bot token:  ✓ xoxb-...****
-  User token: ✓ xoxp-...****
-```
-
-Flow:
-1. CLI starts local HTTP server on a random port
-2. Opens browser to `https://slack.com/oauth/v2/authorize` with both `scope` (bot) and `user_scope` (user)
-3. User clicks "Allow"
-4. Slack redirects to `localhost:PORT/callback?code=XXX`
-5. CLI exchanges code for tokens via `oauth.v2.access`
-6. Response contains both `access_token` (xoxb) and `authed_user.access_token` (xoxp)
-7. Both stored in OS keychain
-
-Ships with a Circles-owned Slack app (client_id baked in). Power users can override with `--client-id` / `--client-secret`.
-
-**B. Manual token paste** — for quick setup or custom apps:
-```
-holla slack auth login --token xoxp-1234-...
-```
-Auto-detects token type from prefix. Run twice for both bot + user tokens.
-
-**C. Environment variable** — for CI/scripting:
-```
-SLACK_TOKEN=xoxp-... holla slack chat send --channel #general --message "Deploy done"
-```
-
-**Token selection per command:**
-
-The CLI automatically picks the right token based on what the API requires:
-
-| API | Token used |
-|-----|-----------|
-| `search.*`, `stars.*`, `dnd.setSnooze`, `users.profile.set` | User (`xoxp`) |
-| `chat.postMessage`, `conversations.*`, most others | Bot (`xoxb`), falls back to user |
-
-If only one token is available, it's used for everything.
-
-#### 4. Credential storage via OS keychain
-
-Follow shh-env pattern — use OS keychain (macOS Keychain, Linux SecretService) for token storage.
-
-Workspace name is the Slack subdomain (`circles` from `circles.slack.com`).
-
-```
-Keychain entries per workspace:
-  service: holla
-  account: slack:circles:bot       → xoxb-...
-  account: slack:circles:user      → xoxp-...
-  account: slack:personal:user     → xoxp-...
-```
-
-**Workspace selection:**
-- 1 workspace → auto-selected, no `--workspace` needed
-- Multiple workspaces → must pass `--workspace <name>`
-
-```bash
-# One workspace — just works
-holla slack channels list
-
-# Multiple — must specify
-holla slack channels list
-✗ Multiple workspaces found. Use --workspace:
-  - circles  (circles.slack.com)
-  - personal (personal.slack.com)
-
-holla slack channels list --workspace circles
-```
-
-`holla slack auth status` shows all workspaces:
-```
-circles   circles.slack.com    bot ✓  user ✓
-personal  personal.slack.com   user ✓
-```
-
-#### 5. Config file
-
-`~/.config/holla/config.json` stores non-secret preferences:
-
-```json
-{
-  "slack": {
-    "outputFormat": "table"
-  }
-}
-```
-
-#### 5. Output modes (inspired by gogcli)
-
-Every ergonomic command supports three output modes:
-- **table** (default) — human-friendly, colored
-- **json** (`--json`) — machine-readable, to stdout
-- **plain** (`--plain`) — stable tab-separated, no color
-
-The `api` passthrough command always outputs raw JSON.
-
-Global flags: `--json`, `--plain`, `--verbose`, `--workspace`
-
-#### 6. Markdown support in messages
-
-Slack messages accept Block Kit. We will support Markdown in `holla slack chat send` by converting Markdown to blocks using `@circlesac/mock`'s `markdownToBlocks` function (repo: `circlesac/mack`, module not published yet). This keeps authoring simple while preserving rich formatting.
-
-#### 7. Official Slack SDK
-
-Use `@slack/web-api` for all Slack API calls. No raw HTTP.
-
-```typescript
-import { WebClient } from "@slack/web-api";
-
-export function createSlackClient(token: string): WebClient {
-  return new WebClient(token);
-}
-```
-
-The raw `api` passthrough uses `client.apiCall(method, args)` directly — the same method the SDK uses internally for all its named methods.
-
-## Implementation Phases
-
-### Phase 1 — Project scaffold + Auth + API passthrough
-
-1. Initialize Bun project (`bun init`, `package.json`, `tsconfig.json`)
-2. Install dependencies: `citty`, `@slack/web-api`
-3. Set up entry point with citty command tree (3-level routing)
-4. Implement `holla slack auth login` (token-based, paste xoxb/xoxp token)
-5. Implement `holla slack auth status` (verify token via `auth.test`)
-6. Implement `holla slack auth logout`
-7. Config file read/write (`~/.config/holla/`)
-8. Credential storage via OS keychain
-9. Implement `holla slack api <method>` — raw API passthrough (gives 100% coverage immediately)
-
-### Phase 2 — Channels + Chat + Name resolution
-
-1. `#channel` / `@user` name resolution with local cache
-2. `holla slack channels list` (with `--limit`, `--all` pagination)
-3. `holla slack channels info --channel #general`
-4. `holla slack channels history --channel #general` (with `--limit`, `--before`)
-5. `holla slack channels replies --channel #general --ts 123`
-6. `holla slack chat send --channel #general --message "Hello!"` (with Markdown → Block Kit)
-7. `holla slack chat edit --channel #general --ts 123 --message "Fixed"`
-8. `holla slack chat delete --channel #general --ts 123`
-9. Stdin piping support for `--message`
-10. Output formatting (table/json/plain)
-
-### Phase 3 — Search, Reactions, Users
-
-1. `holla slack search messages --query "deploy"`
-2. `holla slack search files --query "report"`
-3. `holla slack reactions add/remove/get/list`
-4. `holla slack users list`
-5. `holla slack users info --user @john`
-6. `holla slack users find --email john@company.com`
-7. `holla slack users profile / set-profile`
-
-### Phase 4 — Files, Pins, Stars, Bookmarks, Reminders, DND
-
-1. `holla slack files upload/list/info/delete`
-2. `holla slack pins add/list/remove`
-3. `holla slack stars add/list/remove`
-4. `holla slack bookmarks add/edit/list/remove`
-5. `holla slack reminders add/list/info/complete/delete`
-6. `holla slack dnd status/snooze/unsnooze/end`
-
-### Phase 5 — Remaining + Polish
-
-1. `holla slack channels create/archive/unarchive/join/leave/invite/kick/topic/purpose/mark-read`
-2. `holla slack chat whisper/permalink/schedule/unfurl`
-3. `holla slack groups create/list/update/enable/disable/members/set-members`
-4. `holla slack emoji list`
-5. `holla slack team info/profile`
-6. `holla version`
-7. Error handling polish
-
-### Phase 6 — Distribution
-
-1. `bun build --compile` for standalone binaries
-3. npm wrapper package (follow shh-env pattern)
-4. Homebrew formula
-5. GitHub Actions release workflow
-6. README documentation
 
 ## Dependencies
 
@@ -521,11 +420,13 @@ The raw `api` passthrough uses `client.apiCall(method, args)` directly — the s
 {
   "dependencies": {
     "citty": "^0.2.0",
-    "@slack/web-api": "^7.0.0"
+    "@slack/web-api": "^7.0.0",
+    "@circlesac/mack": "^26.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4"
   }
 }
 ```
@@ -537,8 +438,14 @@ The raw `api` passthrough uses `client.apiCall(method, args)` directly — the s
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun build --compile --outfile=dist/holla src/index.ts",
-    "test": "bun test",
-    "lint": "npx @circlesac/lint --all"
+    "test": "vitest run"
   }
 }
 ```
+
+## Distribution
+
+1. `bun build --compile` for standalone binaries (linux-x64, linux-arm64, darwin-x64, darwin-arm64)
+2. GitHub Actions release workflow (tag-triggered)
+3. npm wrapper package
+4. Homebrew formula

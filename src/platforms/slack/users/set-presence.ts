@@ -22,7 +22,7 @@ export const setPresenceCommand = defineCommand({
         process.exit(1);
       }
 
-      const { token } = await getToken(args.workspace, true);
+      const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       await client.users.setPresence({ presence });

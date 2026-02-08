@@ -29,7 +29,7 @@ export const filesCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace, true);
+      const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       const result = await client.search.files({
