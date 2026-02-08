@@ -505,8 +505,7 @@ The raw `api` passthrough uses `client.apiCall(method, args)` directly — the s
 4. `holla slack emoji list`
 5. `holla slack team info/profile`
 6. `holla version`
-8. Shell completions
-9. Error handling polish
+7. Error handling polish
 
 ### Phase 6 — Distribution
 

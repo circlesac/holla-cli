@@ -7,10 +7,11 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun build --compile --outfile=dist/holla src/index.ts",
-    "test": "bun test"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "typescript": "^5"
