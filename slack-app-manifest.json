@@ -1,0 +1,63 @@
+{
+  "display_information": {
+    "name": "holla-cli",
+    "description": "CLI tool for interacting with Slack",
+    "background_color": "#000000"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "holla-cli",
+      "always_online": false
+    }
+  },
+  "oauth_config": {
+    "redirect_urls": [
+      "http://localhost:9876/callback"
+    ],
+    "scopes": {
+      "bot": [
+        "channels:read",
+        "channels:history",
+        "channels:join",
+        "channels:manage",
+        "chat:write",
+        "files:read",
+        "files:write",
+        "groups:read",
+        "groups:write",
+        "groups:history",
+        "im:read",
+        "im:write",
+        "im:history",
+        "pins:read",
+        "pins:write",
+        "reactions:read",
+        "reactions:write",
+        "reminders:read",
+        "reminders:write",
+        "team:read",
+        "users:read",
+        "users:read.email",
+        "bookmarks:read",
+        "bookmarks:write",
+        "emoji:read",
+        "usergroups:read",
+        "usergroups:write"
+      ],
+      "user": [
+        "search:read",
+        "stars:read",
+        "stars:write",
+        "dnd:read",
+        "dnd:write",
+        "users.profile:read",
+        "users.profile:write"
+      ]
+    }
+  },
+  "settings": {
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}
