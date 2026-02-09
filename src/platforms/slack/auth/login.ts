@@ -4,7 +4,7 @@ import { createSlackClient } from "../client.ts";
 import { ensureConfigDir } from "../../../lib/config.ts";
 import manifest from "../../../../slack-app-manifest.json";
 
-const DEFAULT_PORT = 9876;
+const REDIRECT_URI = "https://holla.circles.ac/callback";
 const DEFAULT_CLIENT_ID = "8296864935811.10462015149125";
 const DEFAULT_CLIENT_SECRET = "85212febb6a85d3088045da95297188a";
 
@@ -40,23 +40,26 @@ async function loginWithToken(token: string): Promise<void> {
   );
 }
 
+function randomPort(): number {
+  return 49152 + Math.floor(Math.random() * 16384);
+}
+
 async function loginWithOAuth(
   clientId: string,
   clientSecret: string,
-  port: number,
 ): Promise<void> {
-  const redirectUri = `http://localhost:${port}/callback`;
+  const port = randomPort();
+  const state = btoa(JSON.stringify({ p: port }));
 
   const authUrl = new URL("https://slack.com/oauth/v2/authorize");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("scope", BOT_SCOPES);
   authUrl.searchParams.set("user_scope", USER_SCOPES);
-  authUrl.searchParams.set("redirect_uri", redirectUri);
+  authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+  authUrl.searchParams.set("state", state);
 
   console.log("Opening browser for Slack authorization...");
-  console.log(
-    `Waiting for callback on http://localhost:${port}/callback...\n`,
-  );
+  console.log(`Waiting for callback on http://localhost:${port}/callback...\n`);
 
   const code = await new Promise<string>((resolve, reject) => {
     const server = Bun.serve({
@@ -127,7 +130,7 @@ async function loginWithOAuth(
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: REDIRECT_URI,
     }),
   });
 
@@ -205,10 +208,6 @@ export const loginCommand = defineCommand({
       type: "string",
       description: "Slack app client secret (or set SLACK_CLIENT_SECRET)",
     },
-    port: {
-      type: "string",
-      description: `Local port for OAuth callback (default: ${DEFAULT_PORT})`,
-    },
   },
   async run({ args }) {
     await ensureConfigDir();
@@ -232,10 +231,8 @@ export const loginCommand = defineCommand({
     const clientSecret =
       args["client-secret"] ?? process.env["SLACK_CLIENT_SECRET"] ?? DEFAULT_CLIENT_SECRET;
 
-    const port = args.port ? parseInt(args.port, 10) : DEFAULT_PORT;
-
     try {
-      await loginWithOAuth(clientId, clientSecret, port);
+      await loginWithOAuth(clientId, clientSecret);
     } catch (error) {
       console.error(
         `\x1b[31m✗\x1b[0m OAuth failed: ${error instanceof Error ? error.message : "Unknown error"}`,
