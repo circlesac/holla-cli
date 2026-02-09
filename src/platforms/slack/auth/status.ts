@@ -2,6 +2,9 @@ import { defineCommand } from "citty";
 import { listWorkspaces } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import manifest from "../../../../slack-app-manifest.json";
+
+const EXPECTED_USER_SCOPES = new Set(manifest.oauth_config.scopes.user);
 
 export const statusCommand = defineCommand({
   meta: { name: "status", description: "Show authentication status" },
@@ -39,8 +42,16 @@ export const statusCommand = defineCommand({
       if (ws.userToken) {
         try {
           const client = createSlackClient(ws.userToken);
-          await client.auth.test();
-          entry["user"] = "✓";
+          const result = await client.auth.test();
+          const grantedScopes = new Set(
+            (result.response_metadata as { scopes?: string[] })?.scopes ?? [],
+          );
+          const missing = [...EXPECTED_USER_SCOPES].filter((s) => !grantedScopes.has(s));
+          if (missing.length > 0) {
+            entry["user"] = `✗ missing: ${missing.join(", ")}`;
+          } else {
+            entry["user"] = "✓";
+          }
         } catch {
           entry["user"] = "✗ (invalid)";
         }
