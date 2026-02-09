@@ -16,10 +16,10 @@ export const infoCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const userId = await resolveUser(client, args.user);
+      const userId = await resolveUser(client, args.user, workspace);
       const result = await client.users.info({ user: userId });
 
       if (args.json) {

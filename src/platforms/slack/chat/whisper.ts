@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
@@ -30,15 +31,18 @@ export const whisperCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channel = await resolveChannel(client, args.channel);
-      const user = await resolveUser(client, args.user);
+      const channel = await resolveChannel(client, args.channel, workspace);
+      const user = await resolveUser(client, args.user, workspace);
 
+      const text = args.message;
+      const blocks = await markdownToBlocks(text);
       const result = await client.chat.postEphemeral({
         channel,
         user,
-        text: args.message,
+        text,
+        blocks,
       });
 
       console.log(`\x1b[32m✓\x1b[0m Ephemeral message sent (ts: ${result.message_ts})`);

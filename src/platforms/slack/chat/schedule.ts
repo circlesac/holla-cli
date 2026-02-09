@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
@@ -30,9 +31,9 @@ export const scheduleCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channel = await resolveChannel(client, args.channel);
+      const channel = await resolveChannel(client, args.channel, workspace);
 
       const postAt = Number(args.at);
       if (Number.isNaN(postAt)) {
@@ -40,9 +41,12 @@ export const scheduleCommand = defineCommand({
         process.exit(1);
       }
 
+      const text = args.message;
+      const blocks = await markdownToBlocks(text);
       const result = await client.chat.scheduleMessage({
         channel,
-        text: args.message,
+        text,
+        blocks,
         post_at: postAt,
       });
 

@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
@@ -27,17 +28,25 @@ export const editCommand = defineCommand({
       required: true,
       alias: "m",
     },
+    plain: {
+      type: "boolean",
+      description: "Send as plain text without markdown conversion",
+      default: false,
+    },
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channel = await resolveChannel(client, args.channel);
+      const channel = await resolveChannel(client, args.channel, workspace);
 
+      const text = args.message;
+      const blocks = args.plain ? undefined : await markdownToBlocks(text);
       const result = await client.chat.update({
         channel,
         ts: args.ts,
-        text: args.message,
+        text,
+        blocks,
       });
 
       console.log(`\x1b[32m✓\x1b[0m Message updated (ts: ${result.ts})`);

@@ -20,9 +20,9 @@ export const purposeCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channelId = await resolveChannel(client, args.channel);
+      const channelId = await resolveChannel(client, args.channel, workspace);
 
       await client.conversations.setPurpose({
         channel: channelId,

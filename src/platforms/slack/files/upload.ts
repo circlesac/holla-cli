@@ -27,12 +27,12 @@ export const uploadCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       let channelId: string | undefined;
       if (args.channel) {
-        channelId = await resolveChannel(client, args.channel);
+        channelId = await resolveChannel(client, args.channel, workspace);
       }
 
       const bunFile = Bun.file(args.file);

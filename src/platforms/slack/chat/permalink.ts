@@ -24,9 +24,9 @@ export const permalinkCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channel = await resolveChannel(client, args.channel);
+      const channel = await resolveChannel(client, args.channel, workspace);
 
       const result = await client.chat.getPermalink({ channel, message_ts: args.ts });
 

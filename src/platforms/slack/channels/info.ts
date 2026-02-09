@@ -18,9 +18,9 @@ export const infoCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channelId = await resolveChannel(client, args.channel);
+      const channelId = await resolveChannel(client, args.channel, workspace);
 
       const result = await client.conversations.info({ channel: channelId });
       const ch = result.channel as Record<string, unknown> | undefined;

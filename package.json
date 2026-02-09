@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@circlesac/mack": "^26.2.0",
+    "@circlesac/mack": "^26.2.2",
     "@slack/web-api": "^7.13.0",
     "citty": "^0.2.0"
   },

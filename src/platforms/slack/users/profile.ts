@@ -15,12 +15,12 @@ export const profileCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       const params: Record<string, unknown> = {};
       if (args.user) {
-        params.user = await resolveUser(client, args.user);
+        params.user = await resolveUser(client, args.user, workspace);
       }
 
       const result = await client.users.profile.get(params);

@@ -10,9 +10,13 @@ interface NameMap {
   [name: string]: string;
 }
 
-async function loadCache(key: string): Promise<NameMap | null> {
+function cacheFileName(workspace: string, key: string): string {
+  return `${workspace}-${key}.json`;
+}
+
+async function loadCache(workspace: string, key: string): Promise<NameMap | null> {
   try {
-    const path = join(getCacheDir(), `${key}.json`);
+    const path = join(getCacheDir(), cacheFileName(workspace, key));
     const content = await readFile(path, "utf-8");
     const entry = JSON.parse(content) as CacheEntry<NameMap>;
     if (Date.now() > entry.expiresAt) return null;
@@ -22,8 +26,8 @@ async function loadCache(key: string): Promise<NameMap | null> {
   }
 }
 
-async function saveCache(key: string, data: NameMap): Promise<void> {
-  const path = join(getCacheDir(), `${key}.json`);
+async function saveCache(workspace: string, key: string, data: NameMap): Promise<void> {
+  const path = join(getCacheDir(), cacheFileName(workspace, key));
   const entry: CacheEntry<NameMap> = {
     data,
     expiresAt: Date.now() + CACHE_TTL,
@@ -31,8 +35,8 @@ async function saveCache(key: string, data: NameMap): Promise<void> {
   await writeFile(path, JSON.stringify(entry));
 }
 
-async function fetchChannelMap(client: WebClient): Promise<NameMap> {
-  const cached = await loadCache("channels");
+async function fetchChannelMap(client: WebClient, workspace: string): Promise<NameMap> {
+  const cached = await loadCache(workspace, "channels");
   if (cached) return cached;
 
   const map: NameMap = {};
@@ -53,12 +57,12 @@ async function fetchChannelMap(client: WebClient): Promise<NameMap> {
     cursor = result.response_metadata?.next_cursor || undefined;
   } while (cursor);
 
-  await saveCache("channels", map);
+  await saveCache(workspace, "channels", map);
   return map;
 }
 
-async function fetchUserMap(client: WebClient): Promise<NameMap> {
-  const cached = await loadCache("users");
+async function fetchUserMap(client: WebClient, workspace: string): Promise<NameMap> {
+  const cached = await loadCache(workspace, "users");
   if (cached) return cached;
 
   const map: NameMap = {};
@@ -74,17 +78,18 @@ async function fetchUserMap(client: WebClient): Promise<NameMap> {
     cursor = result.response_metadata?.next_cursor || undefined;
   } while (cursor);
 
-  await saveCache("users", map);
+  await saveCache(workspace, "users", map);
   return map;
 }
 
 export async function resolveChannel(
   client: WebClient,
   input: string,
+  workspace: string,
 ): Promise<string> {
   if (!input.startsWith("#")) return input;
   const name = input.slice(1);
-  const map = await fetchChannelMap(client);
+  const map = await fetchChannelMap(client, workspace);
   const id = map[name];
   if (!id) throw new Error(`Channel not found: ${input}`);
   return id;
@@ -93,10 +98,11 @@ export async function resolveChannel(
 export async function resolveUser(
   client: WebClient,
   input: string,
+  workspace: string,
 ): Promise<string> {
   if (!input.startsWith("@")) return input;
   const name = input.slice(1);
-  const map = await fetchUserMap(client);
+  const map = await fetchUserMap(client, workspace);
   const id = map[name];
   if (!id) throw new Error(`User not found: ${input}`);
   return id;

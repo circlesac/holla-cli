@@ -5,7 +5,7 @@
     "": {
       "name": "holla-cli",
       "dependencies": {
-        "@circlesac/mack": "^26.2.0",
+        "@circlesac/mack": "^26.2.2",
         "@slack/web-api": "^7.13.0",
         "citty": "^0.2.0",
       },
@@ -19,7 +19,7 @@
     },
   },
   "packages": {
-    "@circlesac/mack": ["@circlesac/mack@26.2.0", "", { "dependencies": { "@slack/types": "^2.1.0", "fast-xml-parser": "^4.0.6", "marked": "^4.0.12" } }, "sha512-+bWgk5iL2hMKQBDbmwKCObBkOxoPGaUlOW3jojjyVIfTk2Q12EnWI2SaseurtU9ij6QlCgPe6YEgI80Rqm2qsQ=="],
+    "@circlesac/mack": ["@circlesac/mack@26.2.2", "", { "dependencies": { "@slack/types": "^2.1.0", "fast-xml-parser": "^4.0.6", "marked": "^4.0.12" } }, "sha512-lqCqtfjecJko3HnR4Ul8Ht9y8N2EulC/iMm/avEHRl1wZP1sYecc3EFlUGgRPlUvsMHtBU9BpHXRbjBNwLfPEw=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 

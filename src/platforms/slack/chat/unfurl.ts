@@ -29,9 +29,9 @@ export const unfurlCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const channel = await resolveChannel(client, args.channel);
+      const channel = await resolveChannel(client, args.channel, workspace);
 
       let unfurls: Record<string, unknown>;
       try {

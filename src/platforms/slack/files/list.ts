@@ -29,7 +29,7 @@ export const listCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
       const params: Record<string, unknown> = {
@@ -37,11 +37,11 @@ export const listCommand = defineCommand({
       };
 
       if (args.channel) {
-        params.channel = await resolveChannel(client, args.channel);
+        params.channel = await resolveChannel(client, args.channel, workspace);
       }
 
       if (args.user) {
-        params.user = await resolveUser(client, args.user);
+        params.user = await resolveUser(client, args.user, workspace);
       }
 
       if (args.cursor) {
