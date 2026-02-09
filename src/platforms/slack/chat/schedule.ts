@@ -28,6 +28,11 @@ export const scheduleCommand = defineCommand({
       description: "Unix timestamp for when to send the message",
       required: true,
     },
+    thread: {
+      type: "string",
+      description: "Thread timestamp to reply in (e.g. 1234567890.123456)",
+      alias: "t",
+    },
   },
   async run({ args }) {
     try {
@@ -43,11 +48,13 @@ export const scheduleCommand = defineCommand({
 
       const text = args.message;
       const blocks = await markdownToBlocks(text);
+      const thread_ts = args.thread || undefined;
       const result = await client.chat.scheduleMessage({
         channel,
         text,
         blocks,
         post_at: postAt,
+        thread_ts,
       });
 
       console.log(

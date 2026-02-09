@@ -28,6 +28,11 @@ export const whisperCommand = defineCommand({
       required: true,
       alias: "m",
     },
+    thread: {
+      type: "string",
+      description: "Thread timestamp to reply in (e.g. 1234567890.123456)",
+      alias: "t",
+    },
   },
   async run({ args }) {
     try {
@@ -38,11 +43,13 @@ export const whisperCommand = defineCommand({
 
       const text = args.message;
       const blocks = await markdownToBlocks(text);
+      const thread_ts = args.thread || undefined;
       const result = await client.chat.postEphemeral({
         channel,
         user,
         text,
         blocks,
+        thread_ts,
       });
 
       console.log(`\x1b[32m✓\x1b[0m Ephemeral message sent (ts: ${result.message_ts})`);

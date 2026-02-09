@@ -22,6 +22,11 @@ export const sendCommand = defineCommand({
       description: "Message text or markdown (reads from stdin if omitted)",
       alias: "m",
     },
+    thread: {
+      type: "string",
+      description: "Thread timestamp to reply to (e.g. 1234567890.123456)",
+      alias: "t",
+    },
     plain: {
       type: "boolean",
       description: "Send as plain text without markdown conversion",
@@ -45,12 +50,13 @@ export const sendCommand = defineCommand({
         process.exit(1);
       }
 
+      const thread_ts = args.thread || undefined;
       if (args.plain) {
-        const result = await client.chat.postMessage({ channel, text });
+        const result = await client.chat.postMessage({ channel, text, thread_ts });
         console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
       } else {
         const blocks = await markdownToBlocks(text);
-        const result = await client.chat.postMessage({ channel, text, blocks });
+        const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
         console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
       }
     } catch (error) {
