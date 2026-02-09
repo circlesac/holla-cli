@@ -19,12 +19,15 @@
         "channels:read"
       ],
       "user": [
+        "bookmarks:read",
+        "bookmarks:write",
         "channels:history",
         "channels:read",
         "channels:write",
         "chat:write",
         "dnd:read",
         "dnd:write",
+        "emoji:read",
         "files:read",
         "files:write",
         "groups:history",
@@ -46,9 +49,12 @@
         "stars:read",
         "stars:write",
         "team:read",
+        "usergroups:read",
+        "usergroups:write",
         "users.profile:read",
         "users.profile:write",
-        "users:read"
+        "users:read",
+        "users:read.email"
       ]
     }
   },

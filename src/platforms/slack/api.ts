@@ -40,7 +40,7 @@ export const apiCommand = defineCommand({
 
     const apiArgs: Record<string, unknown> = {};
 
-    // Check for --body flag
+    // Check for --body flag or positional JSON arg
     const bodyIdx = flagArgs.indexOf("--body");
     if (bodyIdx >= 0 && flagArgs[bodyIdx + 1]) {
       try {
@@ -48,6 +48,17 @@ export const apiCommand = defineCommand({
       } catch {
         console.error("\x1b[31m✗\x1b[0m Invalid JSON in --body");
         process.exit(1);
+      }
+    } else {
+      // Support positional JSON body: holla slack api users.list '{"limit":100}'
+      const jsonArg = flagArgs.find((a) => a.startsWith("{"));
+      if (jsonArg) {
+        try {
+          Object.assign(apiArgs, JSON.parse(jsonArg) as Record<string, unknown>);
+        } catch {
+          console.error("\x1b[31m✗\x1b[0m Invalid JSON body");
+          process.exit(1);
+        }
       }
     }
 

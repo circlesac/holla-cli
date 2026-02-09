@@ -3,6 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
+import { normalizeSlackText } from "../text.ts";
 
 export const whisperCommand = defineCommand({
   meta: { name: "whisper", description: "Send an ephemeral message visible only to one user" },
@@ -41,7 +42,7 @@ export const whisperCommand = defineCommand({
       const channel = await resolveChannel(client, args.channel, workspace);
       const user = await resolveUser(client, args.user, workspace);
 
-      const text = args.message;
+      const text = normalizeSlackText(args.message);
       const blocks = await markdownToBlocks(text);
       const thread_ts = args.thread || undefined;
       const result = await client.chat.postEphemeral({

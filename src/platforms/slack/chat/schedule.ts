@@ -3,6 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { normalizeSlackText } from "../text.ts";
 
 export const scheduleCommand = defineCommand({
   meta: { name: "schedule", description: "Schedule a message for later" },
@@ -46,7 +47,7 @@ export const scheduleCommand = defineCommand({
         process.exit(1);
       }
 
-      const text = args.message;
+      const text = normalizeSlackText(args.message);
       const blocks = await markdownToBlocks(text);
       const thread_ts = args.thread || undefined;
       const result = await client.chat.scheduleMessage({

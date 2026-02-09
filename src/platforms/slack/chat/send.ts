@@ -3,6 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { normalizeSlackText } from "../text.ts";
 
 export const sendCommand = defineCommand({
   meta: { name: "send", description: "Send a message to a channel" },
@@ -50,6 +51,7 @@ export const sendCommand = defineCommand({
         process.exit(1);
       }
 
+      text = normalizeSlackText(text);
       const thread_ts = args.thread || undefined;
       if (args.plain) {
         const result = await client.chat.postMessage({ channel, text, thread_ts });

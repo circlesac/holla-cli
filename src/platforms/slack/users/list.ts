@@ -11,15 +11,7 @@ export const listCommand = defineCommand({
     plain: { type: "boolean", description: "Output as plain text" },
     limit: {
       type: "string",
-      description: "Number of users to return (default 20)",
-    },
-    all: {
-      type: "boolean",
-      description: "Auto-paginate to fetch all users",
-    },
-    cursor: {
-      type: "string",
-      description: "Pagination cursor",
+      description: "Number of users per page (default 1000, max 1000)",
     },
   },
   async run({ args }) {
@@ -27,9 +19,9 @@ export const listCommand = defineCommand({
       const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const limit = args.limit ? parseInt(args.limit, 10) : 20;
+      const limit = args.limit ? parseInt(args.limit as string, 10) : 1000;
       const users: Record<string, unknown>[] = [];
-      let cursor: string | undefined = args.cursor;
+      let cursor: string | undefined;
 
       do {
         const result = await client.users.list({
@@ -48,7 +40,7 @@ export const listCommand = defineCommand({
         }
 
         cursor = result.response_metadata?.next_cursor || undefined;
-      } while (args.all && cursor);
+      } while (cursor);
 
       printOutput(users, getOutputFormat(args), [
         { key: "id", label: "ID" },

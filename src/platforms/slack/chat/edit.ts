@@ -3,6 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { normalizeSlackText } from "../text.ts";
 
 export const editCommand = defineCommand({
   meta: { name: "edit", description: "Edit an existing message" },
@@ -40,7 +41,7 @@ export const editCommand = defineCommand({
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel, workspace);
 
-      const text = args.message;
+      const text = normalizeSlackText(args.message);
       const blocks = args.plain ? undefined : await markdownToBlocks(text);
       const result = await client.chat.update({
         channel,
