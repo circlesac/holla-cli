@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveUser } from "../resolve.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const presenceCommand = defineCommand({
   meta: { name: "presence", description: "Get user presence status" },
@@ -34,10 +35,7 @@ export const presenceCommand = defineCommand({
         }
       }
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

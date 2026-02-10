@@ -91,3 +91,14 @@ export function getOutputFormat(args: { json?: boolean; plain?: boolean }): Outp
   if (args.plain) return "plain";
   return "table";
 }
+
+export function printPaging(
+  label: string,
+  paging: { page?: number; pages?: number; total?: number } | undefined,
+): void {
+  if (paging?.page && paging?.pages) {
+    const totalStr =
+      paging.total != null ? ` (${paging.total} total results)` : "";
+    console.error(`${label}Page ${paging.page}/${paging.pages}${totalStr}`);
+  }
+}

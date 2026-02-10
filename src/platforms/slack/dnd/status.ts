@@ -3,13 +3,13 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveUser } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const statusCommand = defineCommand({
   meta: { name: "status", description: "Get DND status" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
     user: {
       type: "string",
       description: "User name or ID (e.g. @john or U01234567)",
@@ -39,10 +39,7 @@ export const statusCommand = defineCommand({
 
       printOutput(info, getOutputFormat(args));
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

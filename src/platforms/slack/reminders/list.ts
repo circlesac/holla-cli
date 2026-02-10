@@ -2,13 +2,13 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List reminders" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
   },
   async run({ args }) {
     try {
@@ -33,10 +33,7 @@ export const listCommand = defineCommand({
         { key: "complete_ts", label: "Completed" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

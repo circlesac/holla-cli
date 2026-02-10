@@ -4,6 +4,7 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const scheduleCommand = defineCommand({
   meta: { name: "schedule", description: "Schedule a message for later" },
@@ -62,10 +63,7 @@ export const scheduleCommand = defineCommand({
         `\x1b[32m✓\x1b[0m Message scheduled (id: ${result.scheduled_message_id}, post_at: ${result.post_at})`,
       );
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

@@ -4,6 +4,7 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const sendCommand = defineCommand({
   meta: { name: "send", description: "Send a message to a channel" },
@@ -62,10 +63,7 @@ export const sendCommand = defineCommand({
         console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
       }
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

@@ -2,13 +2,13 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const infoCommand = defineCommand({
   meta: { name: "info", description: "Get file information" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
     file: {
       type: "string",
       description: "File ID",
@@ -46,10 +46,7 @@ export const infoCommand = defineCommand({
 
       printOutput(info, getOutputFormat(args));
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

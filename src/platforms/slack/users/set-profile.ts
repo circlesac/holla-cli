@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const setProfileCommand = defineCommand({
   meta: { name: "set-profile", description: "Set user profile fields" },
@@ -47,10 +48,7 @@ export const setProfileCommand = defineCommand({
 
       console.log("\x1b[32m\u2713\x1b[0m Profile updated");
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

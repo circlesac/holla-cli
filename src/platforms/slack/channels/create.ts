@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const createCommand = defineCommand({
   meta: { name: "create", description: "Create a new channel" },
@@ -32,10 +33,7 @@ export const createCommand = defineCommand({
         `\x1b[32m✓\x1b[0m Channel created: #${ch?.name ?? args.name} (${ch?.id ?? "unknown"})`,
       );
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

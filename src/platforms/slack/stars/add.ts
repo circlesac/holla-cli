@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const addCommand = defineCommand({
   meta: { name: "add", description: "Star an item" },
@@ -32,10 +33,7 @@ export const addCommand = defineCommand({
 
       console.log("\x1b[32m✓\x1b[0m Item starred");
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

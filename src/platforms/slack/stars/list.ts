@@ -2,50 +2,45 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs, cursorPaginationArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List starred items" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
-    limit: {
-      type: "string",
-      description: "Number of items to return (default 20)",
-    },
-    cursor: {
-      type: "string",
-      description: "Pagination cursor",
-    },
+    ...commonArgs,
+    ...cursorPaginationArgs,
   },
   async run({ args }) {
     try {
       const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const params: Record<string, unknown> = {
-        count: args.limit ? parseInt(args.limit, 10) : 20,
-      };
+      const items: Record<string, unknown>[] = [];
+      let cursor: string | undefined = args.cursor;
 
-      if (args.cursor) {
-        params.cursor = args.cursor;
-      }
+      do {
+        const params: Record<string, unknown> = {
+          count: args.limit ? parseInt(args.limit, 10) : 20,
+        };
+        if (cursor) params.cursor = cursor;
 
-      const result = await client.stars.list(params);
+        const result = await client.stars.list(params);
 
-      const items = ((result.items as Record<string, unknown>[] | undefined) ?? []).map(
-        (item) => {
+        for (const item of (result.items as Record<string, unknown>[] | undefined) ?? []) {
           const message = item.message as Record<string, unknown> | undefined;
           const file = item.file as Record<string, unknown> | undefined;
-          return {
+          items.push({
             type: item.type ?? "",
             channel: message?.channel ?? item.channel ?? "",
             ts: message?.ts ?? "",
             text: message?.text ?? file?.name ?? "",
             date_create: item.date_create ?? "",
-          };
-        },
-      );
+          });
+        }
+
+        cursor = result.response_metadata?.next_cursor || undefined;
+      } while (args.all && cursor);
 
       printOutput(items, getOutputFormat(args), [
         { key: "type", label: "Type" },
@@ -55,10 +50,7 @@ export const listCommand = defineCommand({
         { key: "date_create", label: "Starred At" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

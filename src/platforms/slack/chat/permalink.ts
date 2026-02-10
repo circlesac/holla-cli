@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const permalinkCommand = defineCommand({
   meta: { name: "permalink", description: "Get a permalink URL for a message" },
@@ -32,10 +33,7 @@ export const permalinkCommand = defineCommand({
 
       console.log(result.permalink);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

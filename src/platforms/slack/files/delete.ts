@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const deleteCommand = defineCommand({
   meta: { name: "delete", description: "Delete a file" },
@@ -21,10 +22,7 @@ export const deleteCommand = defineCommand({
 
       console.log(`\x1b[32m✓\x1b[0m File deleted: ${args.file}`);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

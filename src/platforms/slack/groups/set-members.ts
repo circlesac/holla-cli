@@ -1,13 +1,13 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const setMembersCommand = defineCommand({
   meta: { name: "set-members", description: "Set members of a user group" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
     group: {
       type: "string",
       description: "User group ID",
@@ -33,10 +33,7 @@ export const setMembersCommand = defineCommand({
         `\x1b[32m✓\x1b[0m Members updated for user group ${args.group}`,
       );
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

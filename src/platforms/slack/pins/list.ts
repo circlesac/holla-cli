@@ -3,13 +3,13 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List pinned items in a channel" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
     channel: {
       type: "string",
       description: "Channel ID or #name",
@@ -45,10 +45,7 @@ export const listCommand = defineCommand({
         { key: "created", label: "Pinned At" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

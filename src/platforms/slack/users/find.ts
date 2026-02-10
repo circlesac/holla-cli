@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const findCommand = defineCommand({
   meta: { name: "find", description: "Find a user by email" },
@@ -36,10 +37,7 @@ export const findCommand = defineCommand({
         console.log(`Email:         ${user.profile?.email ?? ""}`);
       }
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

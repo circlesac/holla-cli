@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const removeCommand = defineCommand({
   meta: { name: "remove", description: "Remove a reaction from a message" },
@@ -38,10 +39,7 @@ export const removeCommand = defineCommand({
 
       console.log(`\x1b[32m\u2713\x1b[0m Reaction :${args.name}: removed`);
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

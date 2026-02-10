@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const leaveCommand = defineCommand({
   meta: { name: "leave", description: "Leave a channel" },
@@ -23,10 +24,7 @@ export const leaveCommand = defineCommand({
 
       console.log("\x1b[32m✓\x1b[0m Left channel");
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

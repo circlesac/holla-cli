@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveUser } from "../resolve.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const profileCommand = defineCommand({
   meta: { name: "profile", description: "Get user profile" },
@@ -51,10 +52,7 @@ export const profileCommand = defineCommand({
         }
       }
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

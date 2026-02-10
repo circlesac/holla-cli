@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { storeToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { ensureConfigDir } from "../../../lib/config.ts";
+import { handleError } from "../../../lib/errors.ts";
 import manifest from "../../../../slack-app-manifest.json";
 
 const REDIRECT_URI = "https://holla.circles.ac/callback";
@@ -217,10 +218,7 @@ export const loginCommand = defineCommand({
       try {
         await loginWithToken(args.token);
       } catch (error) {
-        console.error(
-          `\x1b[31m✗\x1b[0m Authentication failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        process.exit(1);
+        handleError(error);
       }
       return;
     }
@@ -234,10 +232,7 @@ export const loginCommand = defineCommand({
     try {
       await loginWithOAuth(clientId, clientSecret);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m OAuth failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

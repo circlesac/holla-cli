@@ -3,29 +3,18 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs, cursorPaginationArgs } from "../../../lib/args.ts";
 
 export const membersCommand = defineCommand({
   meta: { name: "members", description: "List channel members" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
+    ...cursorPaginationArgs,
     channel: {
       type: "string",
       description: "Channel ID or #name",
       required: true,
-    },
-    limit: {
-      type: "string",
-      description: "Number of members to return",
-    },
-    all: {
-      type: "boolean",
-      description: "Auto-paginate to fetch all members",
-    },
-    cursor: {
-      type: "string",
-      description: "Pagination cursor",
     },
   },
   async run({ args }) {
@@ -59,10 +48,7 @@ export const membersCommand = defineCommand({
         { key: "id", label: "Member ID" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

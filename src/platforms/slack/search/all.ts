@@ -1,34 +1,19 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
-import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { printOutput, getOutputFormat, printPaging } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs, pagePaginationArgs } from "../../../lib/args.ts";
 
 export const allCommand = defineCommand({
   meta: { name: "all", description: "Search messages and files" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
+    ...pagePaginationArgs,
     query: {
       type: "string",
       description: "Search query",
       required: true,
-    },
-    limit: {
-      type: "string",
-      description: "Number of results to return (default 20)",
-    },
-    sort: {
-      type: "string",
-      description: "Sort by: score or timestamp (default score)",
-    },
-    "sort-dir": {
-      type: "string",
-      description: "Sort direction: asc or desc (default desc)",
-    },
-    page: {
-      type: "string",
-      description: "Page number (default 1)",
     },
   },
   async run({ args }) {
@@ -44,17 +29,20 @@ export const allCommand = defineCommand({
         sort_dir: (args["sort-dir"] as "asc" | "desc") ?? "desc",
       });
 
-      const messages = (
-        result.messages as {
-          matches?: { channel?: { name: string }; username?: string; ts: string; text: string }[];
-        }
-      )?.matches ?? [];
+      const messagesResult = result.messages as {
+        matches?: { channel?: { name: string }; username?: string; ts: string; text: string }[];
+        paging?: { page?: number; pages?: number; total?: number };
+      };
+      const messages = messagesResult?.matches ?? [];
 
-      const files = (
-        result.files as {
-          matches?: { id: string; name: string; title: string; filetype: string }[];
-        }
-      )?.matches ?? [];
+      const filesResult = result.files as {
+        matches?: { id: string; name: string; title: string; filetype: string }[];
+        paging?: { page?: number; pages?: number; total?: number };
+      };
+      const files = filesResult?.matches ?? [];
+
+      printPaging("Messages: ", messagesResult?.paging);
+      printPaging("Files: ", filesResult?.paging);
 
       if (messages.length > 0) {
         console.log("\x1b[1mMessages:\x1b[0m");
@@ -93,10 +81,7 @@ export const allCommand = defineCommand({
         console.log("No results found.");
       }
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

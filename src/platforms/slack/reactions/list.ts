@@ -3,24 +3,17 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveUser } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs, cursorPaginationArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List reactions made by a user" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
+    ...cursorPaginationArgs,
     user: {
       type: "string",
       description: "User ID or @name (defaults to current user)",
-    },
-    limit: {
-      type: "string",
-      description: "Number of items to return (default 20)",
-    },
-    cursor: {
-      type: "string",
-      description: "Pagination cursor",
     },
   },
   async run({ args }) {
@@ -28,30 +21,36 @@ export const listCommand = defineCommand({
       const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const params: Record<string, unknown> = {
-        limit: args.limit ? parseInt(args.limit, 10) : 20,
-        full: true,
+      const userId = args.user
+        ? await resolveUser(client, args.user, workspace)
+        : undefined;
+
+      type ReactionItem = {
+        type: string;
+        channel?: string;
+        message?: { ts: string; text: string; reactions?: { name: string; count: number }[] };
       };
 
-      if (args.user) {
-        params.user = await resolveUser(client, args.user, workspace);
-      }
+      const allItems: ReactionItem[] = [];
+      let cursor: string | undefined = args.cursor;
 
-      if (args.cursor) {
-        params.cursor = args.cursor;
-      }
+      do {
+        const params: Record<string, unknown> = {
+          limit: args.limit ? parseInt(args.limit, 10) : 20,
+          full: true,
+        };
+        if (userId) params.user = userId;
+        if (cursor) params.cursor = cursor;
 
-      const result = await client.reactions.list(params);
+        const result = await client.reactions.list(params);
 
-      const items = (
-        result.items as {
-          type: string;
-          channel?: string;
-          message?: { ts: string; text: string; reactions?: { name: string; count: number }[] };
-        }[]
-      ) ?? [];
+        const items = (result.items as ReactionItem[]) ?? [];
+        allItems.push(...items);
 
-      const rows = items.map((item) => ({
+        cursor = result.response_metadata?.next_cursor || undefined;
+      } while (args.all && cursor);
+
+      const rows = allItems.map((item) => ({
         type: item.type,
         channel: item.channel ?? "",
         ts: item.message?.ts ?? "",
@@ -69,10 +68,7 @@ export const listCommand = defineCommand({
         { key: "reactions", label: "Reactions" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

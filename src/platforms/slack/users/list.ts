@@ -2,16 +2,20 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List users" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
     limit: {
       type: "string",
       description: "Number of users per page (default 1000, max 1000)",
+    },
+    cursor: {
+      type: "string",
+      description: "Pagination cursor (start from a specific page)",
     },
   },
   async run({ args }) {
@@ -21,7 +25,7 @@ export const listCommand = defineCommand({
 
       const limit = args.limit ? parseInt(args.limit as string, 10) : 1000;
       const users: Record<string, unknown>[] = [];
-      let cursor: string | undefined;
+      let cursor: string | undefined = args.cursor;
 
       do {
         const result = await client.users.list({
@@ -49,10 +53,7 @@ export const listCommand = defineCommand({
         { key: "display_name", label: "Display Name" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m\u2717\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

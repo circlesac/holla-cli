@@ -215,6 +215,17 @@ describe("users list", () => {
 			expect.objectContaining({ limit: 500 }),
 		)
 	})
+
+	it("should use --cursor as starting point", async () => {
+		mockUsersList.mockResolvedValueOnce({
+			members: [{ id: "U3", name: "c" }],
+			response_metadata: { next_cursor: "" },
+		})
+		await run({ cursor: "start_here" })
+		expect(mockUsersList).toHaveBeenCalledWith(
+			expect.objectContaining({ cursor: "start_here" }),
+		)
+	})
 })
 
 // ──────────────────────────────────────────────
@@ -240,6 +251,23 @@ describe("channels replies", () => {
 		await run({ limit: "10" })
 		expect(mockConversationsReplies).toHaveBeenCalledWith(
 			expect.objectContaining({ limit: 10 }),
+		)
+	})
+
+	it("should auto-paginate when --all is set", async () => {
+		mockConversationsReplies
+			.mockResolvedValueOnce({
+				messages: [{ ts: "1", user: "U1", text: "a" }],
+				response_metadata: { next_cursor: "page2" },
+			})
+			.mockResolvedValueOnce({
+				messages: [{ ts: "2", user: "U2", text: "b" }],
+				response_metadata: { next_cursor: "" },
+			})
+		await run({ all: true })
+		expect(mockConversationsReplies).toHaveBeenCalledTimes(2)
+		expect(mockConversationsReplies).toHaveBeenNthCalledWith(2,
+			expect.objectContaining({ cursor: "page2" }),
 		)
 	})
 })
@@ -272,6 +300,23 @@ describe("stars list", () => {
 		const call = mockStarsList.mock.calls[0]![0]
 		expect(call).not.toHaveProperty("cursor")
 	})
+
+	it("should auto-paginate when --all is set", async () => {
+		mockStarsList
+			.mockResolvedValueOnce({
+				items: [{ type: "message", message: { ts: "1", text: "a" } }],
+				response_metadata: { next_cursor: "page2" },
+			})
+			.mockResolvedValueOnce({
+				items: [{ type: "message", message: { ts: "2", text: "b" } }],
+				response_metadata: { next_cursor: "" },
+			})
+		await run({ all: true })
+		expect(mockStarsList).toHaveBeenCalledTimes(2)
+		expect(mockStarsList).toHaveBeenNthCalledWith(2,
+			expect.objectContaining({ cursor: "page2" }),
+		)
+	})
 })
 
 describe("files list", () => {
@@ -303,6 +348,23 @@ describe("files list", () => {
 			expect.objectContaining({ count: 50 }),
 		)
 	})
+
+	it("should auto-paginate when --all is set", async () => {
+		mockFilesList
+			.mockResolvedValueOnce({
+				files: [{ id: "F1", name: "a.txt" }],
+				response_metadata: { next_cursor: "page2" },
+			})
+			.mockResolvedValueOnce({
+				files: [{ id: "F2", name: "b.txt" }],
+				response_metadata: { next_cursor: "" },
+			})
+		await run({ all: true })
+		expect(mockFilesList).toHaveBeenCalledTimes(2)
+		expect(mockFilesList).toHaveBeenNthCalledWith(2,
+			expect.objectContaining({ cursor: "page2" }),
+		)
+	})
 })
 
 describe("reactions list", () => {
@@ -332,6 +394,23 @@ describe("reactions list", () => {
 		await run({})
 		expect(mockReactionsList).toHaveBeenCalledWith(
 			expect.objectContaining({ full: true }),
+		)
+	})
+
+	it("should auto-paginate when --all is set", async () => {
+		mockReactionsList
+			.mockResolvedValueOnce({
+				items: [{ type: "message", message: { ts: "1", text: "a" } }],
+				response_metadata: { next_cursor: "page2" },
+			})
+			.mockResolvedValueOnce({
+				items: [{ type: "message", message: { ts: "2", text: "b" } }],
+				response_metadata: { next_cursor: "" },
+			})
+		await run({ all: true })
+		expect(mockReactionsList).toHaveBeenCalledTimes(2)
+		expect(mockReactionsList).toHaveBeenNthCalledWith(2,
+			expect.objectContaining({ cursor: "page2" }),
 		)
 	})
 })

@@ -3,13 +3,14 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
+import { handleError } from "../../../lib/errors.ts";
+import { commonArgs, cursorPaginationArgs } from "../../../lib/args.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List files" },
   args: {
-    workspace: { type: "string", description: "Workspace name", alias: "w" },
-    json: { type: "boolean", description: "Output as JSON" },
-    plain: { type: "boolean", description: "Output as plain text" },
+    ...commonArgs,
+    ...cursorPaginationArgs,
     channel: {
       type: "string",
       description: "Channel ID or #name to filter by",
@@ -18,47 +19,43 @@ export const listCommand = defineCommand({
       type: "string",
       description: "User ID or @name to filter by",
     },
-    limit: {
-      type: "string",
-      description: "Number of files to return (default 20)",
-    },
-    cursor: {
-      type: "string",
-      description: "Pagination cursor",
-    },
   },
   async run({ args }) {
     try {
       const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const params: Record<string, unknown> = {
+      const baseParams: Record<string, unknown> = {
         count: args.limit ? parseInt(args.limit, 10) : 20,
       };
 
       if (args.channel) {
-        params.channel = await resolveChannel(client, args.channel, workspace);
+        baseParams.channel = await resolveChannel(client, args.channel, workspace);
       }
 
       if (args.user) {
-        params.user = await resolveUser(client, args.user, workspace);
+        baseParams.user = await resolveUser(client, args.user, workspace);
       }
 
-      if (args.cursor) {
-        params.cursor = args.cursor;
-      }
+      const files: Record<string, unknown>[] = [];
+      let cursor: string | undefined = args.cursor;
 
-      const result = await client.files.list(params);
+      do {
+        const params: Record<string, unknown> = { ...baseParams, ...(cursor ? { cursor } : {}) };
+        const result = await client.files.list(params);
 
-      const files = ((result.files as Record<string, unknown>[] | undefined) ?? []).map(
-        (f) => ({
-          id: f.id ?? "",
-          name: f.name ?? "",
-          filetype: f.filetype ?? "",
-          size: f.size ?? 0,
-          timestamp: f.timestamp ?? "",
-        }),
-      );
+        for (const f of (result.files as Record<string, unknown>[] | undefined) ?? []) {
+          files.push({
+            id: f.id ?? "",
+            name: f.name ?? "",
+            filetype: f.filetype ?? "",
+            size: f.size ?? 0,
+            timestamp: f.timestamp ?? "",
+          });
+        }
+
+        cursor = result.response_metadata?.next_cursor || undefined;
+      } while (args.all && cursor);
 
       printOutput(files, getOutputFormat(args), [
         { key: "id", label: "ID" },
@@ -68,10 +65,7 @@ export const listCommand = defineCommand({
         { key: "timestamp", label: "Timestamp" },
       ]);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });

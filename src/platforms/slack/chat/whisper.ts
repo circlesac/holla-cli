@@ -4,6 +4,7 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
+import { handleError } from "../../../lib/errors.ts";
 
 export const whisperCommand = defineCommand({
   meta: { name: "whisper", description: "Send an ephemeral message visible only to one user" },
@@ -55,10 +56,7 @@ export const whisperCommand = defineCommand({
 
       console.log(`\x1b[32m✓\x1b[0m Ephemeral message sent (ts: ${result.message_ts})`);
     } catch (error) {
-      console.error(
-        `\x1b[31m✗\x1b[0m ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      process.exit(1);
+      handleError(error);
     }
   },
 });
