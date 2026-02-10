@@ -26,6 +26,10 @@ export const allCommand = defineCommand({
       type: "string",
       description: "Sort direction: asc or desc (default desc)",
     },
+    page: {
+      type: "string",
+      description: "Page number (default 1)",
+    },
   },
   async run({ args }) {
     try {
@@ -35,6 +39,7 @@ export const allCommand = defineCommand({
       const result = await client.search.all({
         query: args.query,
         count: args.limit ? parseInt(args.limit, 10) : 20,
+        page: args.page ? parseInt(args.page, 10) : 1,
         sort: (args.sort as "score" | "timestamp") ?? "score",
         sort_dir: (args["sort-dir"] as "asc" | "desc") ?? "desc",
       });
