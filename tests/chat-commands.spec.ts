@@ -70,11 +70,32 @@ describe("send command", () => {
 		expect(mockMarkdownToBlocks).not.toHaveBeenCalled()
 	})
 
+})
+
+describe("reply command", () => {
+	async function runReply(args: Record<string, unknown>) {
+		const { replyCommand } = await import("../src/platforms/slack/chat/reply.ts")
+		await (replyCommand as any).run({ args: { workspace: "test-ws", channel: "C001", ...args } })
+	}
+
 	it("should pass thread_ts when --thread is provided", async () => {
-		await runSend({ message: "hi", thread: "1234567890.123456" })
+		await runReply({ message: "hi", thread: "1234567890.123456" })
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
 		)
+	})
+
+	it("should call markdownToBlocks by default", async () => {
+		await runReply({ message: "hello", thread: "1234567890.123456" })
+		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("hello")
+		expect(mockPostMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ blocks: [{ type: "section" }] }),
+		)
+	})
+
+	it("should NOT call markdownToBlocks when --plain is true", async () => {
+		await runReply({ message: "hello", thread: "1234567890.123456", plain: true })
+		expect(mockMarkdownToBlocks).not.toHaveBeenCalled()
 	})
 })
 

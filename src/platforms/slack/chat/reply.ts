@@ -6,8 +6,8 @@ import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
 import { handleError } from "../../../lib/errors.ts";
 
-export const sendCommand = defineCommand({
-  meta: { name: "send", description: "Send a message to a channel" },
+export const replyCommand = defineCommand({
+  meta: { name: "reply", description: "Reply to a thread" },
   args: {
     workspace: {
       type: "string",
@@ -17,6 +17,12 @@ export const sendCommand = defineCommand({
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
+      required: true,
+    },
+    thread: {
+      type: "string",
+      description: "Thread timestamp to reply to (e.g. 1234567890.123456)",
+      alias: "t",
       required: true,
     },
     message: {
@@ -48,13 +54,14 @@ export const sendCommand = defineCommand({
       }
 
       text = normalizeSlackText(text);
+      const thread_ts = args.thread;
       if (args.plain) {
-        const result = await client.chat.postMessage({ channel, text });
-        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+        const result = await client.chat.postMessage({ channel, text, thread_ts });
+        console.log(`\x1b[32m✓\x1b[0m Reply sent (ts: ${result.ts})`);
       } else {
         const blocks = await markdownToBlocks(text);
-        const result = await client.chat.postMessage({ channel, text, blocks });
-        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+        const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
+        console.log(`\x1b[32m✓\x1b[0m Reply sent (ts: ${result.ts})`);
       }
     } catch (error) {
       handleError(error);
