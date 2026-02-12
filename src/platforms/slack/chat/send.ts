@@ -37,7 +37,7 @@ export const sendCommand = defineCommand({
       const channel = await resolveChannel(client, args.channel, workspace);
 
       let text = args.message;
-      if (!text) {
+      if (!text && !process.stdin.isTTY) {
         text = await Bun.stdin.text();
         text = text.trimEnd();
       }
