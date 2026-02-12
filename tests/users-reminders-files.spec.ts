@@ -359,7 +359,7 @@ describe("files upload", () => {
 
 	it("should resolve channel and pass channel_id when --channel is provided", async () => {
 		mockFilesUploadV2.mockResolvedValueOnce({ ok: true })
-		await run({ file: "/tmp/test.txt", channel: "#general", title: "My File", message: "Here it is" })
+		await run({ file: "/tmp/test.txt", channel: "#general", title: "My File", comment: "Here it is" })
 		expect(mockFilesUploadV2).toHaveBeenCalledWith(
 			expect.objectContaining({
 				channel_id: "C001",

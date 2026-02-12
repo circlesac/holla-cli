@@ -51,25 +51,19 @@ describe("send command", () => {
 	}
 
 	it("should call normalizeSlackText (regression: zsh <!here> escaping)", async () => {
-		await runSend({ message: "<\\!here> test" })
+		await runSend({ text: "<\\!here> test" })
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ text: "<!here> test" }),
 		)
 	})
 
-	it("should call markdownToBlocks when --plain is not set", async () => {
-		await runSend({ message: "hello" })
+	it("should call markdownToBlocks", async () => {
+		await runSend({ text: "hello" })
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("hello")
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
 		)
 	})
-
-	it("should NOT call markdownToBlocks when --plain is true", async () => {
-		await runSend({ message: "hello", plain: true })
-		expect(mockMarkdownToBlocks).not.toHaveBeenCalled()
-	})
-
 })
 
 describe("reply command", () => {
@@ -79,23 +73,18 @@ describe("reply command", () => {
 	}
 
 	it("should pass thread_ts when --thread is provided", async () => {
-		await runReply({ message: "hi", thread: "1234567890.123456" })
+		await runReply({ text: "hi", thread: "1234567890.123456" })
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
 		)
 	})
 
-	it("should call markdownToBlocks by default", async () => {
-		await runReply({ message: "hello", thread: "1234567890.123456" })
+	it("should call markdownToBlocks", async () => {
+		await runReply({ text: "hello", thread: "1234567890.123456" })
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("hello")
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
 		)
-	})
-
-	it("should NOT call markdownToBlocks when --plain is true", async () => {
-		await runReply({ message: "hello", thread: "1234567890.123456", plain: true })
-		expect(mockMarkdownToBlocks).not.toHaveBeenCalled()
 	})
 })
 
@@ -108,25 +97,17 @@ describe("edit command", () => {
 	}
 
 	it("should call normalizeSlackText (regression: zsh escaping)", async () => {
-		await runEdit({ message: "<\\!channel> update" })
+		await runEdit({ text: "<\\!channel> update" })
 		expect(mockUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({ text: "<!channel> update" }),
 		)
 	})
 
-	it("should call markdownToBlocks (regression: was missing from edit)", async () => {
-		await runEdit({ message: "updated" })
+	it("should call markdownToBlocks", async () => {
+		await runEdit({ text: "updated" })
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("updated")
 		expect(mockUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
-		)
-	})
-
-	it("should NOT call markdownToBlocks when --plain is true", async () => {
-		await runEdit({ message: "updated", plain: true })
-		expect(mockMarkdownToBlocks).not.toHaveBeenCalled()
-		expect(mockUpdate).toHaveBeenCalledWith(
-			expect.objectContaining({ blocks: undefined }),
 		)
 	})
 })
@@ -140,14 +121,14 @@ describe("whisper command", () => {
 	}
 
 	it("should call normalizeSlackText (regression: zsh escaping)", async () => {
-		await runWhisper({ message: "<\\!everyone> whisper" })
+		await runWhisper({ text: "<\\!everyone> whisper" })
 		expect(mockPostEphemeral).toHaveBeenCalledWith(
 			expect.objectContaining({ text: "<!everyone> whisper" }),
 		)
 	})
 
-	it("should call markdownToBlocks (regression: was missing from whisper)", async () => {
-		await runWhisper({ message: "secret" })
+	it("should call markdownToBlocks", async () => {
+		await runWhisper({ text: "secret" })
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("secret")
 		expect(mockPostEphemeral).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
@@ -155,7 +136,7 @@ describe("whisper command", () => {
 	})
 
 	it("should pass thread_ts when --thread is provided", async () => {
-		await runWhisper({ message: "hi", thread: "1234567890.123456" })
+		await runWhisper({ text: "hi", thread: "1234567890.123456" })
 		expect(mockPostEphemeral).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
 		)
@@ -171,14 +152,14 @@ describe("schedule command", () => {
 	}
 
 	it("should call normalizeSlackText (regression: zsh escaping)", async () => {
-		await runSchedule({ message: "<\\!here> scheduled" })
+		await runSchedule({ text: "<\\!here> scheduled" })
 		expect(mockScheduleMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ text: "<!here> scheduled" }),
 		)
 	})
 
-	it("should call markdownToBlocks (regression: was missing from schedule)", async () => {
-		await runSchedule({ message: "later" })
+	it("should call markdownToBlocks", async () => {
+		await runSchedule({ text: "later" })
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("later")
 		expect(mockScheduleMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
@@ -186,14 +167,14 @@ describe("schedule command", () => {
 	})
 
 	it("should pass post_at as a number", async () => {
-		await runSchedule({ message: "later" })
+		await runSchedule({ text: "later" })
 		expect(mockScheduleMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ post_at: 1700000000 }),
 		)
 	})
 
 	it("should pass thread_ts when --thread is provided", async () => {
-		await runSchedule({ message: "hi", thread: "1234567890.123456" })
+		await runSchedule({ text: "hi", thread: "1234567890.123456" })
 		expect(mockScheduleMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
 		)
