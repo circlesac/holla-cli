@@ -19,11 +19,10 @@ export const scheduleCommand = defineCommand({
       description: "Channel name or ID (e.g. #general or C01234567)",
       required: true,
     },
-    message: {
+    text: {
       type: "string",
-      description: "Message text",
+      description: "Message text or markdown",
       required: true,
-      alias: "m",
     },
     at: {
       type: "string",
@@ -48,7 +47,7 @@ export const scheduleCommand = defineCommand({
         process.exit(1);
       }
 
-      const text = normalizeSlackText(args.message);
+      const text = normalizeSlackText(args.text as string);
       const blocks = await markdownToBlocks(text);
       const thread_ts = args.thread || undefined;
       const result = await client.chat.scheduleMessage({

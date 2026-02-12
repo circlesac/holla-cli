@@ -19,15 +19,10 @@ export const sendCommand = defineCommand({
       description: "Channel name or ID (e.g. #general or C01234567)",
       required: true,
     },
-    message: {
+    text: {
       type: "string",
       description: "Message text or markdown (reads from stdin if omitted)",
-      alias: "m",
-    },
-    plain: {
-      type: "boolean",
-      description: "Send as plain text without markdown conversion",
-      default: false,
+      alias: "t",
     },
   },
   async run({ args }) {
@@ -36,26 +31,21 @@ export const sendCommand = defineCommand({
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel, workspace);
 
-      let text = args.message;
+      let text = args.text as string | undefined;
       if (!text && !process.stdin.isTTY) {
         text = await Bun.stdin.text();
         text = text.trimEnd();
       }
 
       if (!text) {
-        console.error("\x1b[31m✗\x1b[0m No message provided. Use --message or pipe via stdin.");
+        console.error("\x1b[31m✗\x1b[0m No message provided. Use --text or pipe via stdin.");
         process.exit(1);
       }
 
       text = normalizeSlackText(text);
-      if (args.plain) {
-        const result = await client.chat.postMessage({ channel, text });
-        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
-      } else {
-        const blocks = await markdownToBlocks(text);
-        const result = await client.chat.postMessage({ channel, text, blocks });
-        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
-      }
+      const blocks = await markdownToBlocks(text);
+      const result = await client.chat.postMessage({ channel, text, blocks });
+      console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
     } catch (error) {
       handleError(error);
     }

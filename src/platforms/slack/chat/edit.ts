@@ -24,16 +24,11 @@ export const editCommand = defineCommand({
       description: "Timestamp of the message to edit",
       required: true,
     },
-    message: {
+    text: {
       type: "string",
-      description: "New message text",
+      description: "New message text or markdown",
       required: true,
-      alias: "m",
-    },
-    plain: {
-      type: "boolean",
-      description: "Send as plain text without markdown conversion",
-      default: false,
+      alias: "t",
     },
   },
   async run({ args }) {
@@ -42,8 +37,8 @@ export const editCommand = defineCommand({
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel, workspace);
 
-      const text = normalizeSlackText(args.message);
-      const blocks = args.plain ? undefined : await markdownToBlocks(text);
+      const text = normalizeSlackText(args.text as string);
+      const blocks = await markdownToBlocks(text);
       const result = await client.chat.update({
         channel,
         ts: args.ts,

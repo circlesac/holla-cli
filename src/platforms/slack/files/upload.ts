@@ -21,7 +21,7 @@ export const uploadCommand = defineCommand({
       type: "string",
       description: "Title of the file",
     },
-    message: {
+    comment: {
       type: "string",
       description: "Initial comment for the file",
     },
@@ -45,7 +45,7 @@ export const uploadCommand = defineCommand({
         file: Buffer.from(content),
         filename,
         title: args.title,
-        initial_comment: args.message,
+        initial_comment: args.comment as string | undefined,
       });
 
       console.log(

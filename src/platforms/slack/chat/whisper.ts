@@ -24,11 +24,10 @@ export const whisperCommand = defineCommand({
       description: "User name or ID (e.g. @john or U01234567)",
       required: true,
     },
-    message: {
+    text: {
       type: "string",
-      description: "Message text",
+      description: "Message text or markdown",
       required: true,
-      alias: "m",
     },
     thread: {
       type: "string",
@@ -43,7 +42,7 @@ export const whisperCommand = defineCommand({
       const channel = await resolveChannel(client, args.channel, workspace);
       const user = await resolveUser(client, args.user, workspace);
 
-      const text = normalizeSlackText(args.message);
+      const text = normalizeSlackText(args.text as string);
       const blocks = await markdownToBlocks(text);
       const thread_ts = args.thread || undefined;
       const result = await client.chat.postEphemeral({
