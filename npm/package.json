@@ -16,5 +16,5 @@
   "scripts": {
     "postinstall": "node install.js"
   },
-  "version": "26.2.10"
+  "version": "26.2.11"
 }
