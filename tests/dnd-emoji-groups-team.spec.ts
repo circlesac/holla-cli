@@ -87,6 +87,8 @@ vi.mock("../src/platforms/slack/client.ts", () => ({
 vi.mock("../src/platforms/slack/resolve.ts", () => ({
 	resolveChannel: vi.fn().mockResolvedValue("C001"),
 	resolveUser: vi.fn().mockResolvedValue("U001"),
+	resolveUserName: vi.fn().mockResolvedValue("john"),
+	resolveGroup: vi.fn().mockResolvedValue({ id: "S001", name: "Engineering", handle: "eng" }),
 }))
 
 beforeEach(() => {
@@ -270,7 +272,7 @@ describe("groups disable", () => {
 
 	it("should print success message", async () => {
 		await run({ group: "S001" })
-		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("S001"))
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
 		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("disabled"))
 	})
 })
@@ -288,7 +290,7 @@ describe("groups enable", () => {
 
 	it("should print success message", async () => {
 		await run({ group: "S001" })
-		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("S001"))
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
 		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("enabled"))
 	})
 })
@@ -344,6 +346,7 @@ describe("groups set-members", () => {
 	it("should print success message", async () => {
 		await run({ group: "S001", users: "U001,U002" })
 		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Members updated"))
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
 	})
 })
 
@@ -370,8 +373,81 @@ describe("groups update", () => {
 
 	it("should print success message", async () => {
 		await run({ group: "S001" })
-		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("S001"))
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
 		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("updated"))
+	})
+})
+
+describe("groups add-member", () => {
+	async function run(args: Record<string, unknown>) {
+		const { addMemberCommand } = await import("../src/platforms/slack/groups/add-member.ts")
+		await (addMemberCommand as any).run({ args: { workspace: "test-ws", ...args } })
+	}
+
+	it("should add user to group", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(mockUsergroupsUsersUpdate).toHaveBeenCalledWith({ usergroup: "S001", users: "U002,U001" })
+	})
+
+	it("should skip if user is already a member", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U001", "U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(mockUsergroupsUsersUpdate).not.toHaveBeenCalled()
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("already a member"))
+	})
+
+	it("should print success message with group name", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
+	})
+})
+
+describe("groups remove-member", () => {
+	async function run(args: Record<string, unknown>) {
+		const { removeMemberCommand } = await import("../src/platforms/slack/groups/remove-member.ts")
+		await (removeMemberCommand as any).run({ args: { workspace: "test-ws", ...args } })
+	}
+
+	it("should remove user from group", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U001", "U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(mockUsergroupsUsersUpdate).toHaveBeenCalledWith({ usergroup: "S001", users: "U002" })
+	})
+
+	it("should skip if user is not a member", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(mockUsergroupsUsersUpdate).not.toHaveBeenCalled()
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("not a member"))
+	})
+
+	it("should print success message with group name", async () => {
+		mockUsergroupsUsersList.mockResolvedValueOnce({ users: ["U001", "U002"] })
+		await run({ group: "S001", user: "@john" })
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Engineering"))
+	})
+})
+
+// ──────────────────────────────────────────────
+// Auth commands
+// ──────────────────────────────────────────────
+
+describe("auth whoami", () => {
+	async function run(args: Record<string, unknown>) {
+		const { whoamiCommand } = await import("../src/platforms/slack/auth/whoami.ts")
+		await (whoamiCommand as any).run({ args: { workspace: "test-ws", ...args } })
+	}
+
+	it("should call auth.test", async () => {
+		await run({})
+		expect(mockAuthTest).toHaveBeenCalledTimes(1)
+	})
+
+	it("should print output", async () => {
+		await run({})
+		expect(console.log).toHaveBeenCalled()
 	})
 })
 

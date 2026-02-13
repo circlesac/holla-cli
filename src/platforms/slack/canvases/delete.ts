@@ -1,17 +1,16 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
-import { resolveGroup } from "../resolve.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs } from "../../../lib/args.ts";
 
-export const disableCommand = defineCommand({
-  meta: { name: "disable", description: "Disable a user group" },
+export const deleteCommand = defineCommand({
+  meta: { name: "delete", description: "Delete a canvas (permanent)" },
   args: {
     ...commonArgs,
-    group: {
+    canvas: {
       type: "string",
-      description: "User group ID or handle",
+      description: "Canvas ID",
       required: true,
     },
   },
@@ -19,15 +18,12 @@ export const disableCommand = defineCommand({
     try {
       const { token } = await getToken(args.workspace);
       const client = createSlackClient(token);
-      const group = await resolveGroup(client, args.group);
 
-      await client.usergroups.disable({
-        usergroup: group.id,
+      await client.apiCall("canvases.delete", {
+        canvas_id: args.canvas,
       });
 
-      console.log(
-        `\x1b[32m✓\x1b[0m ${group.name} (@${group.handle}) disabled`,
-      );
+      console.log(`\x1b[32m✓\x1b[0m Canvas ${args.canvas} deleted`);
     } catch (error) {
       handleError(error);
     }

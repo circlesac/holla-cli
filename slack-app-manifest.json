@@ -21,6 +21,8 @@
       "user": [
         "bookmarks:read",
         "bookmarks:write",
+        "canvases:read",
+        "canvases:write",
         "channels:history",
         "channels:read",
         "channels:write",

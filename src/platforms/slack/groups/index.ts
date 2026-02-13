@@ -6,6 +6,8 @@ import { enableCommand } from "./enable.ts";
 import { disableCommand } from "./disable.ts";
 import { membersCommand } from "./members.ts";
 import { setMembersCommand } from "./set-members.ts";
+import { addMemberCommand } from "./add-member.ts";
+import { removeMemberCommand } from "./remove-member.ts";
 
 export const groupsCommand = defineCommand({
   meta: { name: "groups", description: "Manage user groups" },
@@ -17,5 +19,7 @@ export const groupsCommand = defineCommand({
     disable: disableCommand,
     members: membersCommand,
     "set-members": setMembersCommand,
+    "add-member": addMemberCommand,
+    "remove-member": removeMemberCommand,
   },
 });

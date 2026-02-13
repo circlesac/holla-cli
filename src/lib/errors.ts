@@ -30,6 +30,11 @@ export function handleError(error: unknown): never {
     console.error(`\x1b[31m✗\x1b[0m ${error.message}`);
   } else if (error instanceof Error) {
     console.error(`\x1b[31m✗\x1b[0m ${error.message}`);
+    const data = (error as { data?: { needed?: string; provided?: string } }).data;
+    if (data?.needed) {
+      console.error(`  Needed: ${data.needed}`);
+      if (data.provided) console.error(`  Provided: ${data.provided}`);
+    }
   } else {
     console.error(`\x1b[31m✗\x1b[0m An unknown error occurred`);
   }

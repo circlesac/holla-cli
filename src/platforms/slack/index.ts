@@ -14,6 +14,7 @@ import { dndCommand } from "./dnd/index.ts";
 import { groupsCommand } from "./groups/index.ts";
 import { emojiCommand } from "./emoji/index.ts";
 import { teamCommand } from "./team/index.ts";
+import { canvasesCommand } from "./canvases/index.ts";
 import { apiCommand } from "./api.ts";
 import { versionCommand } from "./version.ts";
 
@@ -35,6 +36,7 @@ export const slackCommand = defineCommand({
     groups: groupsCommand,
     emoji: emojiCommand,
     team: teamCommand,
+    canvases: canvasesCommand,
     api: apiCommand,
     version: versionCommand,
   },
