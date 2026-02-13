@@ -25,9 +25,10 @@ const mockUsergroupsCreate = vi.fn().mockResolvedValue({
 })
 const mockUsergroupsDisable = vi.fn().mockResolvedValue({ ok: true })
 const mockUsergroupsEnable = vi.fn().mockResolvedValue({ ok: true })
+const mockAuthTest = vi.fn().mockResolvedValue({ user_id: "U001" })
 const mockUsergroupsList = vi.fn().mockResolvedValue({
 	usergroups: [
-		{ id: "S001", name: "Engineering", handle: "eng", description: "Engineering team" },
+		{ id: "S001", name: "Engineering", handle: "eng", description: "Engineering team", users: ["U001", "U002"] },
 	],
 })
 const mockUsergroupsUsersList = vi.fn().mockResolvedValue({ users: ["U001", "U002"] })
@@ -70,6 +71,9 @@ vi.mock("../src/platforms/slack/client.ts", () => ({
 				list: (...a: unknown[]) => mockUsergroupsUsersList(...a),
 				update: (...a: unknown[]) => mockUsergroupsUsersUpdate(...a),
 			},
+		},
+		auth: {
+			test: (...a: unknown[]) => mockAuthTest(...a),
 		},
 		team: {
 			info: (...a: unknown[]) => mockTeamInfo(...a),
@@ -295,14 +299,17 @@ describe("groups list", () => {
 		await (listCommand as any).run({ args: { workspace: "test-ws", ...args } })
 	}
 
-	it("should call usergroups.list", async () => {
+	it("should default to showing only my groups", async () => {
 		await run({})
-		expect(mockUsergroupsList).toHaveBeenCalledTimes(1)
+		expect(mockUsergroupsList).toHaveBeenCalledWith({ include_users: true })
+		expect(mockAuthTest).toHaveBeenCalled()
+		expect(console.log).toHaveBeenCalled()
 	})
 
-	it("should print output", async () => {
-		await run({})
-		expect(console.log).toHaveBeenCalled()
+	it("should show all groups when --all is set", async () => {
+		await run({ all: true })
+		expect(mockUsergroupsList).toHaveBeenCalledWith({ include_users: false })
+		expect(mockAuthTest).not.toHaveBeenCalled()
 	})
 })
 
