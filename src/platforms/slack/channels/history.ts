@@ -16,6 +16,10 @@ export const historyCommand = defineCommand({
       description: "Channel ID or #name",
       required: true,
     },
+    thread: {
+      type: "string",
+      description: "Thread timestamp to fetch replies for",
+    },
     before: {
       type: "string",
       description: "Only messages before this timestamp (latest)",
@@ -32,24 +36,45 @@ export const historyCommand = defineCommand({
       const messages: Record<string, unknown>[] = [];
       let cursor: string | undefined = args.cursor;
 
-      do {
-        const result = await client.conversations.history({
-          channel: channelId,
-          limit,
-          cursor,
-          latest: args.before,
-        });
-
-        for (const msg of result.messages ?? []) {
-          messages.push({
-            ts: msg.ts ?? "",
-            user: msg.user ?? "",
-            text: msg.text ?? "",
+      if (args.thread) {
+        do {
+          const result = await client.conversations.replies({
+            channel: channelId,
+            ts: args.thread,
+            limit,
+            cursor,
           });
-        }
 
-        cursor = result.response_metadata?.next_cursor || undefined;
-      } while (args.all && cursor);
+          for (const msg of result.messages ?? []) {
+            messages.push({
+              ts: msg.ts ?? "",
+              user: msg.user ?? "",
+              text: msg.text ?? "",
+            });
+          }
+
+          cursor = result.response_metadata?.next_cursor || undefined;
+        } while (args.all && cursor);
+      } else {
+        do {
+          const result = await client.conversations.history({
+            channel: channelId,
+            limit,
+            cursor,
+            latest: args.before,
+          });
+
+          for (const msg of result.messages ?? []) {
+            messages.push({
+              ts: msg.ts ?? "",
+              user: msg.user ?? "",
+              text: msg.text ?? "",
+            });
+          }
+
+          cursor = result.response_metadata?.next_cursor || undefined;
+        } while (args.all && cursor);
+      }
 
       printOutput(messages, getOutputFormat(args), [
         { key: "ts", label: "Timestamp" },
