@@ -104,4 +104,18 @@ describe("credentials", () => {
 		expect(result.token).toBe("xoxb-env-token")
 		expect(result.workspace).toBe("env")
 	})
+
+	it("should use user token in getToken", async () => {
+		const { storeToken, getToken } = await import("../src/lib/credentials.ts")
+		await storeToken("test-ws", "bot", "xoxb-bot")
+		await storeToken("test-ws", "user", "xoxp-user")
+		const result = await getToken("test-ws")
+		expect(result.token).toBe("xoxp-user")
+	})
+
+	it("should throw when only bot token exists", async () => {
+		const { storeToken, getToken } = await import("../src/lib/credentials.ts")
+		await storeToken("test-ws", "bot", "xoxb-bot")
+		await expect(getToken("test-ws")).rejects.toThrow("No user token found")
+	})
 })

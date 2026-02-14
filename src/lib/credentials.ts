@@ -107,14 +107,11 @@ export async function getToken(
     );
   }
 
-  // User token first — holla-cli acts as you, not as a bot
-  const token = creds.userToken ?? creds.botToken;
-
-  if (!token) {
+  if (!creds.userToken) {
     throw new Error(
-      `No token found for workspace "${creds.name}". Run "holla slack auth login" to authenticate.`,
+      `No user token found for workspace "${creds.name}". Run: holla slack auth login --workspace ${creds.name}`,
     );
   }
 
-  return { token, workspace: creds.name };
+  return { token: creds.userToken, workspace: creds.name };
 }
