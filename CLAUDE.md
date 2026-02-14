@@ -49,3 +49,14 @@ bunx vitest run      # run tests (use vitest, not bun test)
 ## Testing
 
 Use `bunx vitest run` — NOT `bun test`. The test files use vitest globals (`afterEach`, `describe`) which are not available in bun's native test runner.
+
+## Conventions
+
+- Commands use `citty` `defineCommand` with `commonArgs` from `src/lib/args.ts`
+- Use `getToken(args.workspace)` for auth — always requires user token (xoxp-)
+- Use `handleError(error)` in catch blocks
+- Use `printOutput` / `getOutputFormat` for `--json` / `--plain` support
+- Channel/user resolution: `resolveChannel(client, input, workspace)`, `resolveUser(client, input, workspace)`
+- Text input: use `normalizeSlackText()` and `markdownToBlocks()` from `@circlesac/mack`
+- Stdin support: check `!process.stdin.isTTY` then `await Bun.stdin.text()`
+- Timestamp args: use `--ts` as primary, `--thread` as alias
