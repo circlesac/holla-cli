@@ -21,18 +21,20 @@ export const scheduleCommand = defineCommand({
     },
     text: {
       type: "string",
-      description: "Message text or markdown",
-      required: true,
+      description: "Message text in markdown format (reads from stdin if omitted)",
     },
     at: {
       type: "string",
       description: "Unix timestamp for when to send the message",
       required: true,
     },
-    thread: {
+    ts: {
       type: "string",
       description: "Thread timestamp to reply in (e.g. 1234567890.123456)",
-      alias: "t",
+    },
+    thread: {
+      type: "string",
+      description: "Alias for --ts",
     },
   },
   async run({ args }) {
@@ -47,9 +49,20 @@ export const scheduleCommand = defineCommand({
         process.exit(1);
       }
 
-      const text = normalizeSlackText(args.text as string);
+      let text = args.text as string | undefined;
+      if (!text && !process.stdin.isTTY) {
+        text = await Bun.stdin.text();
+        text = text.trimEnd();
+      }
+
+      if (!text) {
+        console.error("\x1b[31m✗\x1b[0m No message provided. Use --text or pipe via stdin.");
+        process.exit(1);
+      }
+
+      text = normalizeSlackText(text);
       const blocks = await markdownToBlocks(text);
-      const thread_ts = args.thread || undefined;
+      const thread_ts = (args.ts ?? args.thread) || undefined;
       const result = await client.chat.scheduleMessage({
         channel,
         text,

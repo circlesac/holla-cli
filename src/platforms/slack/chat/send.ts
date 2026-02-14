@@ -4,16 +4,14 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
+import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const sendCommand = defineCommand({
   meta: { name: "send", description: "Send a message to a channel" },
   args: {
-    workspace: {
-      type: "string",
-      description: "Workspace name",
-      alias: "w",
-    },
+    ...commonArgs,
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
@@ -21,8 +19,7 @@ export const sendCommand = defineCommand({
     },
     text: {
       type: "string",
-      description: "Message text or markdown (reads from stdin if omitted)",
-      alias: "t",
+      description: "Message text in markdown format (reads from stdin if omitted)",
     },
   },
   async run({ args }) {
@@ -45,7 +42,15 @@ export const sendCommand = defineCommand({
       text = normalizeSlackText(text);
       const blocks = await markdownToBlocks(text);
       const result = await client.chat.postMessage({ channel, text, blocks });
-      console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+
+      const format = getOutputFormat(args);
+      const msg = result.message as Record<string, unknown> | undefined;
+      if (format === "json") {
+        printOutput({ ts: result.ts, channel: result.channel, text: msg?.text ?? text }, format);
+      } else {
+        console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+        if (msg?.text) console.log(`\n  ${String(msg.text).replace(/\n/g, "\n  ")}`);
+      }
     } catch (error) {
       handleError(error);
     }

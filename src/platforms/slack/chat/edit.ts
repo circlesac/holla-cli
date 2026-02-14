@@ -4,16 +4,14 @@ import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
+import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
+import { commonArgs } from "../../../lib/args.ts";
 
 export const editCommand = defineCommand({
   meta: { name: "edit", description: "Edit an existing message" },
   args: {
-    workspace: {
-      type: "string",
-      description: "Workspace name",
-      alias: "w",
-    },
+    ...commonArgs,
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
@@ -26,9 +24,7 @@ export const editCommand = defineCommand({
     },
     text: {
       type: "string",
-      description: "New message text or markdown",
-      required: true,
-      alias: "t",
+      description: "New message text in markdown format (reads from stdin if omitted)",
     },
   },
   async run({ args }) {
@@ -37,7 +33,18 @@ export const editCommand = defineCommand({
       const client = createSlackClient(token);
       const channel = await resolveChannel(client, args.channel, workspace);
 
-      const text = normalizeSlackText(args.text as string);
+      let text = args.text as string | undefined;
+      if (!text && !process.stdin.isTTY) {
+        text = await Bun.stdin.text();
+        text = text.trimEnd();
+      }
+
+      if (!text) {
+        console.error("\x1b[31m✗\x1b[0m No message provided. Use --text or pipe via stdin.");
+        process.exit(1);
+      }
+
+      text = normalizeSlackText(text);
       const blocks = await markdownToBlocks(text);
       const result = await client.chat.update({
         channel,
@@ -46,7 +53,14 @@ export const editCommand = defineCommand({
         blocks,
       });
 
-      console.log(`\x1b[32m✓\x1b[0m Message updated (ts: ${result.ts})`);
+      const format = getOutputFormat(args);
+      const msg = result.message as Record<string, unknown> | undefined;
+      if (format === "json") {
+        printOutput({ ts: result.ts, channel: result.channel, text: msg?.text ?? text }, format);
+      } else {
+        console.log(`\x1b[32m✓\x1b[0m Message updated (ts: ${result.ts})`);
+        if (msg?.text) console.log(`\n  ${String(msg.text).replace(/\n/g, "\n  ")}`);
+      }
     } catch (error) {
       handleError(error);
     }

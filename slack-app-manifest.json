@@ -1,6 +1,6 @@
 {
   "display_information": {
-    "name": "holla-cli",
+    "name": "holla",
     "description": "CLI tool for interacting with Slack",
     "background_color": "#000000"
   },

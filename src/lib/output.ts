@@ -64,8 +64,10 @@ function formatTable(
 
   const cols = columns ?? Object.keys(rows[0]!).map((k) => ({ key: k, label: k }));
 
+  const sanitize = (v: unknown) => String(v ?? "").replace(/\n/g, "↵");
+
   const widths = cols.map((col) => {
-    const values = rows.map((r) => String(r[col.key] ?? "").length);
+    const values = rows.map((r) => sanitize(r[col.key]).length);
     return Math.max(col.label.length, ...values);
   });
 
@@ -78,7 +80,7 @@ function formatTable(
   const body = rows
     .map((row) =>
       cols
-        .map((col, i) => String(row[col.key] ?? "").padEnd(widths[i]!))
+        .map((col, i) => sanitize(row[col.key]).padEnd(widths[i]!))
         .join("  "),
     )
     .join("\n");
