@@ -161,7 +161,8 @@ holla slack channels list --workspace circles
 ### Pi
 
 ```bash
-pi install npm:@circlesac/holla
+pi install git:circlesac/holla-cli
+# or: npx @mariozechner/pi-coding-agent install git:circlesac/holla-cli
 ```
 
 ## Environment Variables
