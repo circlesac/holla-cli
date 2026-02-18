@@ -1,25 +1,42 @@
 {
+  "bin": {
+    "holla": "bin/holla"
+  },
   "dependencies": {
     "@circlesac/mack": "^26.2.4",
     "@slack/web-api": "^7.13.0",
     "citty": "^0.2.0"
   },
+  "description": "CLI tool that acts as you on messaging platforms",
   "devDependencies": {
     "@types/bun": "latest",
     "@vitest/coverage-v8": "^4.0.18",
     "vitest": "^4.0.18"
   },
+  "files": [
+    "bin",
+    "skills"
+  ],
+  "license": "MIT",
   "module": "src/index.ts",
   "name": "@circlesac/holla",
   "peerDependencies": {
     "typescript": "^5"
   },
-  "private": true,
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/circlesac/holla-cli"
+  },
   "scripts": {
     "build": "bun build --compile --outfile=dist/holla src/index.ts",
     "dev": "bun run src/index.ts",
+    "postinstall": "node bin/install.js",
     "test": "vitest run"
   },
-  "type": "module",
-  "version": "26.2.17"
+  "type": "module"
 }

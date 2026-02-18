@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
 
 jobs:
   version:
@@ -21,16 +20,16 @@ jobs:
 
       - run: bun run test
 
-      - name: Bump version
+      - name: Calculate version
         id: bump
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          VERSION=$(npx --yes @circlesac/oneup version --target package.json --target npm/package.json)
+          VERSION=$(npx --yes @circlesac/oneup version --target package.json | tail -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Push version commit
-        run: git push origin main
+      - uses: actions/upload-artifact@v4
+        with:
+          name: versioned-files
+          path: package.json
 
   build:
     needs: version
@@ -49,8 +48,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
         with:
-          ref: main
+          name: versioned-files
 
       - uses: oven-sh/setup-bun@v2
 
@@ -71,8 +72,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
       - uses: actions/download-artifact@v4
         with:
@@ -83,34 +82,36 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           generate_release_notes: true
-          files: artifacts/**/*.tar.gz
+          files: |
+            artifacts/**/*.tar.gz
+            bin/install.sh
 
   publish-npm:
     needs: [version, release]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: versioned-files
+
       - name: Publish to npm
-        run: |
-          cd npm
-          npm publish --access public
+        run: npm publish --access public
 
   publish-homebrew:
     needs: [version, release, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
       - uses: actions/download-artifact@v4
         with:
@@ -140,15 +141,3 @@ jobs:
           git add Formula/holla.rb
           git commit -m "Update holla to ${VERSION}"
           git push
-
-  push-tag:
-    needs: [version, publish-npm, publish-homebrew]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Push tag
-        run: git push origin v${{ needs.version.outputs.version }}

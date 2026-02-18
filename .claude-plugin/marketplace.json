@@ -1,0 +1,11 @@
+{
+  "name": "holla",
+  "owner": { "name": "Circles Inc." },
+  "plugins": [
+    {
+      "name": "holla",
+      "source": "./",
+      "description": "Interact with Slack as yourself — send messages, read threads, search, and create canvases via holla CLI"
+    }
+  ]
+}
