@@ -142,6 +142,28 @@ holla slack channels list
 holla slack channels list --workspace circles
 ```
 
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+| **slack** | Interact with Slack — send messages, read threads, search, manage canvases, and more |
+
+### Claude Code
+
+```bash
+# Add marketplace
+/plugin marketplace add circlesac/holla-cli
+
+# Install plugin
+/plugin install holla
+```
+
+### Pi
+
+```bash
+pi install npm:@circlesac/holla
+```
+
 ## Environment Variables
 
 | Variable | Description |
