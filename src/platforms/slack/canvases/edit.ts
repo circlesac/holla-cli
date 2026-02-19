@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
+import { sanitizeCanvasMarkdown } from "../text.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs } from "../../../lib/args.ts";
 
@@ -22,6 +23,11 @@ export const editCommand = defineCommand({
     markdown: {
       type: "string",
       description: "Markdown content for the operation",
+    },
+    stdio: {
+      type: "boolean",
+      description: "Read markdown content from stdin",
+      default: false,
     },
     "section-id": {
       type: "string",
@@ -49,10 +55,21 @@ export const editCommand = defineCommand({
         operation: args.operation,
       };
 
-      if (args.markdown) {
+      let markdown = args.markdown as string | undefined;
+      if (!markdown && args.stdio) {
+        markdown = (await Bun.stdin.text()).trimEnd() || undefined;
+      }
+
+      if (markdown) {
+        const sanitized = sanitizeCanvasMarkdown(markdown);
+        if (sanitized.modified) {
+          console.error(
+            "\x1b[33m⚠\x1b[0m Markdown adjusted: bullet sub-items under numbered lists were converted to numbered sub-items (Slack Canvas API limitation)",
+          );
+        }
         change.document_content = {
           type: "markdown",
-          markdown: args.markdown,
+          markdown: sanitized.markdown,
         };
       }
 

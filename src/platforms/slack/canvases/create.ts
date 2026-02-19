@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
+import { sanitizeCanvasMarkdown } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs } from "../../../lib/args.ts";
@@ -18,6 +19,11 @@ export const createCommand = defineCommand({
       type: "string",
       description: "Canvas content in markdown format",
     },
+    stdio: {
+      type: "boolean",
+      description: "Read markdown content from stdin",
+      default: false,
+    },
     channel: {
       type: "string",
       description: "Share canvas as read-only to channel(s) (comma-separated #names or IDs)",
@@ -32,12 +38,23 @@ export const createCommand = defineCommand({
       const teamId = authInfo.team_id ?? "";
       const domain = (authInfo.url ?? "").replace(/^https?:\/\//, "").replace(/\.slack\.com\/?$/, "");
 
+      let markdown = args.markdown as string | undefined;
+      if (!markdown && args.stdio) {
+        markdown = (await Bun.stdin.text()).trimEnd() || undefined;
+      }
+
       const params: Record<string, unknown> = {};
       if (args.title) params.title = args.title;
-      if (args.markdown) {
+      if (markdown) {
+        const sanitized = sanitizeCanvasMarkdown(markdown);
+        if (sanitized.modified) {
+          console.error(
+            "\x1b[33m⚠\x1b[0m Markdown adjusted: bullet sub-items under numbered lists were converted to numbered sub-items (Slack Canvas API limitation)",
+          );
+        }
         params.document_content = {
           type: "markdown",
-          markdown: args.markdown,
+          markdown: sanitized.markdown,
         };
       }
 

@@ -1,6 +1,7 @@
 ---
 name: slack
 description: Use holla CLI to interact with Slack — send messages, read threads, search, manage canvases, and more
+user-invocable: true
 ---
 
 holla is a CLI tool that lets you interact with Slack as yourself (using your user token). All commands require `--workspace <name>` (or `-w`).
@@ -64,11 +65,17 @@ Options: `--sort timestamp|score`, `--sort-dir asc|desc`, `--limit <n>`, `--page
 # Create (with optional auto-share)
 holla slack canvases create --title "Title" --markdown "content" --channel "#general" -w <ws>
 
+# Create from file via stdin (--stdio required)
+cat document.md | holla slack canvases create --title "Title" --stdio -w <ws>
+
 # Look up section IDs (required for targeted edits)
 holla slack canvases sections --canvas <id> --contains "search text" -w <ws> --json
 
 # Edit a specific section (replace, insert_before, insert_after, delete)
 holla slack canvases edit --canvas <id> --operation replace --section-id <section-id> --markdown "new content" -w <ws>
+
+# Edit via stdin (--stdio required)
+cat content.md | holla slack canvases edit --canvas <id> --operation insert_at_end --stdio -w <ws>
 
 # Append to end (no section-id needed)
 holla slack canvases edit --canvas <id> --operation insert_at_end --markdown "more" -w <ws>
@@ -83,6 +90,8 @@ holla slack canvases delete --canvas <id> -w <ws>
 Operations: `insert_at_start`, `insert_at_end`, `insert_before`, `insert_after`, `replace`, `delete`
 
 **Important**: Section IDs change after each edit. Always look up fresh IDs with `sections` before editing. The `--contains` filter requires at least one search term.
+
+**Canvas markdown limitations**: The Slack Canvas API does not support bullet sub-items under numbered lists (e.g. `1. item` → `- sub`). This causes `canvas_creation_failed`. The CLI auto-converts these to numbered sub-items (with a warning), but when writing markdown for canvases, prefer consistent nesting: bullets under bullets, or numbers under numbers.
 
 ## Channels
 
