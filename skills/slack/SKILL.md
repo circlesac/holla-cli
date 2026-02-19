@@ -64,14 +64,25 @@ Options: `--sort timestamp|score`, `--sort-dir asc|desc`, `--limit <n>`, `--page
 # Create (with optional auto-share)
 holla slack canvases create --title "Title" --markdown "content" --channel "#general" -w <ws>
 
-# Edit
+# Look up section IDs (required for targeted edits)
+holla slack canvases sections --canvas <id> --contains "search text" -w <ws> --json
+
+# Edit a specific section (replace, insert_before, insert_after, delete)
+holla slack canvases edit --canvas <id> --operation replace --section-id <section-id> --markdown "new content" -w <ws>
+
+# Append to end (no section-id needed)
 holla slack canvases edit --canvas <id> --operation insert_at_end --markdown "more" -w <ws>
 
 # Share
 holla slack canvases access-set --canvas <id> --level read --channels "#general" -w <ws>
+
+# Delete
+holla slack canvases delete --canvas <id> -w <ws>
 ```
 
 Operations: `insert_at_start`, `insert_at_end`, `insert_before`, `insert_after`, `replace`, `delete`
+
+**Important**: Section IDs change after each edit. Always look up fresh IDs with `sections` before editing. The `--contains` filter requires at least one search term.
 
 ## Channels
 
