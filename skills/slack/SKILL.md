@@ -36,6 +36,39 @@ holla slack chat delete --channel "#general" --ts 1234567890.123456 -w <ws>
 
 `--text` accepts standard markdown (converted to Slack blocks automatically). Use `--json` to get `{ ts, channel, text }` back after sending.
 
+## Mentioning users
+
+Slack requires `<@USER_ID>` format for mentions — plain names like `@john` won't notify anyone.
+
+### Workflow
+
+1. Look up channel members to find the user ID:
+   ```bash
+   holla slack channels members --channel "#general" -w <ws> --json
+   ```
+2. Find the target by display name or real name and get their user ID (e.g. `U01234567`)
+3. If uncertain about the match, confirm with the user before proceeding
+4. If the target is not a channel member, invite them first:
+   ```bash
+   holla slack channels invite --channel "#general" --user @username -w <ws>
+   ```
+5. Use `<@USER_ID>` in the message text:
+   ```bash
+   holla slack chat send --channel "#general" --text "Hey <@U01234567>, take a look" -w <ws>
+   ```
+
+### `--user` argument rules
+
+The `--user` flag uses `@` prefix to trigger name lookup. Without `@`, the value is treated as a raw user ID.
+
+| Input | Behavior |
+|-------|----------|
+| `--user @name` | Looks up by Slack username → resolves to ID |
+| `--user U01234567` | Used as-is (raw ID) |
+| `--user name` | Treated as raw ID → will fail |
+
+Always use `@` prefix when passing a username.
+
 ## Reading messages
 
 ```bash
