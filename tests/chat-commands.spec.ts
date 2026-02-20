@@ -1,14 +1,20 @@
 import { vi, beforeEach } from "vitest"
 
-const mockPostMessage = vi.fn().mockResolvedValue({ ts: "123.456", ok: true })
-const mockUpdate = vi.fn().mockResolvedValue({ ts: "123.456", ok: true })
+const mockPostMessage = vi.fn().mockResolvedValue({ ts: "123.456", channel: "C001", ok: true })
+const mockUpdate = vi.fn().mockResolvedValue({ ts: "123.456", channel: "C001", ok: true })
 const mockPostEphemeral = vi.fn().mockResolvedValue({ message_ts: "123.456", ok: true })
 const mockScheduleMessage = vi.fn().mockResolvedValue({
 	scheduled_message_id: "Q123",
 	post_at: 1700000000,
 	ok: true,
 })
+const mockReactionsAdd = vi.fn().mockResolvedValue({ ok: true })
 const mockMarkdownToBlocks = vi.fn().mockResolvedValue([{ type: "section" }])
+const mockGetAttributionConfig = vi.fn().mockResolvedValue({
+	reaction: "robot_face",
+	suffix: false,
+	agent: "holla",
+})
 
 vi.mock("../src/lib/credentials.ts", () => ({
 	getToken: vi.fn().mockResolvedValue({ token: "xoxp-test", workspace: "test-ws" }),
@@ -22,7 +28,20 @@ vi.mock("../src/platforms/slack/client.ts", () => ({
 			postEphemeral: mockPostEphemeral,
 			scheduleMessage: mockScheduleMessage,
 		},
+		reactions: {
+			add: mockReactionsAdd,
+		},
 	})),
+}))
+
+vi.mock("../src/lib/attribution.ts", () => ({
+	getAttributionConfig: mockGetAttributionConfig,
+	applySuffix: vi.fn((text: string, agent: string, template: string) => {
+		return `${text}\n${template.replace(/\{agent\}/g, agent)}`
+	}),
+	addAttributionReaction: vi.fn(async (client: any, channel: string, ts: string, emoji: string) => {
+		await client.reactions.add({ channel, timestamp: ts, name: emoji })
+	}),
 }))
 
 vi.mock("../src/platforms/slack/resolve.ts", () => ({
@@ -62,6 +81,37 @@ describe("send command", () => {
 		expect(mockMarkdownToBlocks).toHaveBeenCalledWith("hello")
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
+		)
+	})
+
+	it("should add attribution reaction after sending", async () => {
+		await runSend({ text: "hello" })
+		expect(mockReactionsAdd).toHaveBeenCalledWith({
+			channel: "C001",
+			timestamp: "123.456",
+			name: "robot_face",
+		})
+	})
+
+	it("should not add reaction when attribution disabled", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: false,
+			suffix: false,
+			agent: "holla",
+		})
+		await runSend({ text: "hello" })
+		expect(mockReactionsAdd).not.toHaveBeenCalled()
+	})
+
+	it("should apply suffix when enabled", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: false,
+			suffix: "_sent via {agent}_",
+			agent: "claude",
+		})
+		await runSend({ text: "hello" })
+		expect(mockPostMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ text: "hello\n_sent via claude_" }),
 		)
 	})
 })
@@ -110,6 +160,27 @@ describe("edit command", () => {
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
 		)
 	})
+
+	it("should add attribution reaction after editing", async () => {
+		await runEdit({ text: "updated" })
+		expect(mockReactionsAdd).toHaveBeenCalledWith({
+			channel: "C001",
+			timestamp: "123.456",
+			name: "robot_face",
+		})
+	})
+
+	it("should not apply suffix to edited messages", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: "robot_face",
+			suffix: "_sent via {agent}_",
+			agent: "claude",
+		})
+		await runEdit({ text: "updated" })
+		expect(mockUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({ text: "updated" }),
+		)
+	})
 })
 
 describe("whisper command", () => {
@@ -139,6 +210,23 @@ describe("whisper command", () => {
 		await runWhisper({ text: "hi", thread: "1234567890.123456" })
 		expect(mockPostEphemeral).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
+		)
+	})
+
+	it("should not add reaction to ephemeral messages", async () => {
+		await runWhisper({ text: "secret" })
+		expect(mockReactionsAdd).not.toHaveBeenCalled()
+	})
+
+	it("should apply suffix to ephemeral messages when enabled", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: "robot_face",
+			suffix: "_sent via {agent}_",
+			agent: "claude",
+		})
+		await runWhisper({ text: "secret" })
+		expect(mockPostEphemeral).toHaveBeenCalledWith(
+			expect.objectContaining({ text: "secret\n_sent via claude_" }),
 		)
 	})
 })
@@ -177,6 +265,23 @@ describe("schedule command", () => {
 		await runSchedule({ text: "hi", thread: "1234567890.123456" })
 		expect(mockScheduleMessage).toHaveBeenCalledWith(
 			expect.objectContaining({ thread_ts: "1234567890.123456" }),
+		)
+	})
+
+	it("should not add reaction to scheduled messages", async () => {
+		await runSchedule({ text: "later" })
+		expect(mockReactionsAdd).not.toHaveBeenCalled()
+	})
+
+	it("should apply suffix to scheduled messages when enabled", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: "robot_face",
+			suffix: "_sent via {agent}_",
+			agent: "claude",
+		})
+		await runSchedule({ text: "later" })
+		expect(mockScheduleMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ text: "later\n_sent via claude_" }),
 		)
 	})
 })

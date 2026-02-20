@@ -6,12 +6,14 @@ import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
-import { commonArgs } from "../../../lib/args.ts";
+import { commonArgs, attributionArgs } from "../../../lib/args.ts";
+import { getAttributionConfig, addAttributionReaction } from "../../../lib/attribution.ts";
 
 export const editCommand = defineCommand({
   meta: { name: "edit", description: "Edit an existing message" },
   args: {
     ...commonArgs,
+    ...attributionArgs,
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
@@ -52,6 +54,11 @@ export const editCommand = defineCommand({
         text,
         blocks,
       });
+
+      const attribution = await getAttributionConfig(args);
+      if (attribution.reaction && result.ts && result.channel) {
+        await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
+      }
 
       const format = getOutputFormat(args);
       const msg = result.message as Record<string, unknown> | undefined;

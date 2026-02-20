@@ -6,12 +6,14 @@ import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
-import { commonArgs } from "../../../lib/args.ts";
+import { commonArgs, attributionArgs } from "../../../lib/args.ts";
+import { getAttributionConfig, applySuffix, addAttributionReaction } from "../../../lib/attribution.ts";
 
 export const replyCommand = defineCommand({
   meta: { name: "reply", description: "Reply to a thread" },
   args: {
     ...commonArgs,
+    ...attributionArgs,
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
@@ -54,8 +56,16 @@ export const replyCommand = defineCommand({
       }
 
       text = normalizeSlackText(text);
+      const attribution = await getAttributionConfig(args);
+      if (attribution.suffix) {
+        text = applySuffix(text, attribution.agent, attribution.suffix);
+      }
       const blocks = await markdownToBlocks(text);
       const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
+
+      if (attribution.reaction && result.ts && result.channel) {
+        await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
+      }
 
       const format = getOutputFormat(args);
       const msg = result.message as Record<string, unknown> | undefined;

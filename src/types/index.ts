@@ -3,6 +3,10 @@ export type OutputFormat = "table" | "json" | "plain";
 export interface HollaConfig {
   slack?: {
     outputFormat?: OutputFormat;
+    attribution?: {
+      reaction?: string | false;
+      suffix?: string | false;
+    };
   };
 }
 

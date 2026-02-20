@@ -5,6 +5,8 @@ import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
 import { normalizeSlackText } from "../text.ts";
 import { handleError } from "../../../lib/errors.ts";
+import { attributionArgs } from "../../../lib/args.ts";
+import { getAttributionConfig, applySuffix } from "../../../lib/attribution.ts";
 
 export const whisperCommand = defineCommand({
   meta: { name: "whisper", description: "Send an ephemeral message visible only to one user" },
@@ -14,6 +16,7 @@ export const whisperCommand = defineCommand({
       description: "Workspace name",
       alias: "w",
     },
+    ...attributionArgs,
     channel: {
       type: "string",
       description: "Channel name or ID (e.g. #general or C01234567)",
@@ -56,6 +59,10 @@ export const whisperCommand = defineCommand({
       }
 
       text = normalizeSlackText(text);
+      const attribution = await getAttributionConfig(args);
+      if (attribution.suffix) {
+        text = applySuffix(text, attribution.agent, attribution.suffix);
+      }
       const blocks = await markdownToBlocks(text);
       const thread_ts = (args.ts ?? args.thread) || undefined;
       const result = await client.chat.postEphemeral({

@@ -23,6 +23,25 @@ export const cursorPaginationArgs = {
   },
 };
 
+export const attributionArgs = {
+  agent: {
+    type: "string" as const,
+    description: "Override agent name for attribution",
+  },
+  attribution: {
+    type: "boolean" as const,
+    description: "Enable attribution (use --no-attribution to disable)",
+  },
+  reaction: {
+    type: "boolean" as const,
+    description: "Enable attribution reaction (use --no-reaction to disable)",
+  },
+  suffix: {
+    type: "boolean" as const,
+    description: "Enable attribution suffix (use --no-suffix to disable)",
+  },
+};
+
 export const pagePaginationArgs = {
   limit: {
     type: "string" as const,
