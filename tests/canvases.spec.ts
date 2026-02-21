@@ -2,6 +2,16 @@ import { vi, beforeEach, afterEach } from "vitest"
 
 const mockApiCall = vi.fn().mockResolvedValue({ ok: true, canvas_id: "F001", sections: [{ id: "sec1", type: "heading" }] })
 const mockAuthTest = vi.fn().mockResolvedValue({ team_id: "T001", url: "https://test-ws.slack.com/" })
+const mockFilesInfo = vi.fn().mockResolvedValue({
+	ok: true,
+	file: {
+		id: "F001",
+		title: "Test Canvas",
+		url_private_download: "https://files.slack.com/download/canvas",
+		created: 1700000000,
+		updated: 1700001000,
+	},
+})
 
 vi.mock("../src/lib/credentials.ts", () => ({
 	getToken: vi.fn().mockResolvedValue({ token: "xoxp-test", workspace: "test-ws" }),
@@ -11,6 +21,7 @@ vi.mock("../src/platforms/slack/client.ts", () => ({
 	createSlackClient: vi.fn(() => ({
 		apiCall: (...a: unknown[]) => mockApiCall(...a),
 		auth: { test: (...a: unknown[]) => mockAuthTest(...a) },
+		files: { info: (...a: unknown[]) => mockFilesInfo(...a) },
 	})),
 }))
 
@@ -210,5 +221,87 @@ describe("canvases sections", () => {
 	it("should print output", async () => {
 		await run({ canvas: "F001" })
 		expect(console.log).toHaveBeenCalled()
+	})
+})
+
+describe("canvases read", () => {
+	const originalFetch = globalThis.fetch
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch
+	})
+
+	async function run(args: Record<string, unknown>) {
+		const { readCommand } = await import("../src/platforms/slack/canvases/read.ts")
+		await (readCommand as any).run({ args: { workspace: "test-ws", ...args } })
+	}
+
+	it("should call files.info with canvas ID", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve("<h1>Title</h1><p>Hello world</p>"),
+		})
+		await run({ canvas: "F001" })
+		expect(mockFilesInfo).toHaveBeenCalledWith({ file: "F001" })
+	})
+
+	it("should fetch download URL with auth header", async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve("<p>content</p>"),
+		})
+		globalThis.fetch = mockFetch
+		await run({ canvas: "F001" })
+		expect(mockFetch).toHaveBeenCalledWith(
+			"https://files.slack.com/download/canvas",
+			{ headers: { Authorization: "Bearer xoxp-test" } },
+		)
+	})
+
+	it("should output converted markdown", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve("<h2>Section</h2><p>Some <b>bold</b> text</p>"),
+		})
+		await run({ canvas: "F001" })
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("## Section"))
+		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("**bold**"))
+	})
+
+	it("should output JSON with metadata", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve("<p>Hello</p>"),
+		})
+		await run({ canvas: "F001", json: true })
+		const output = (console.log as any).mock.calls[0][0]
+		const parsed = JSON.parse(output)
+		expect(parsed.id).toBe("F001")
+		expect(parsed.title).toBe("Test Canvas")
+		expect(parsed.markdown).toContain("Hello")
+		expect(parsed.created).toBe(1700000000)
+		expect(parsed.updated).toBe(1700001000)
+	})
+
+	it("should extract canvas ID from full Slack URL", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve("<p>content</p>"),
+		})
+		await run({ canvas: "https://meltenai.slack.com/docs/T0ACNQU4D71/F0AEELPRSUX" })
+		expect(mockFilesInfo).toHaveBeenCalledWith({ file: "F0AEELPRSUX" })
+	})
+
+	it("should convert tables to markdown", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			text: () => Promise.resolve(
+				"<table><tr><td>Name</td><td>Value</td></tr><tr><td>A</td><td>1</td></tr></table>",
+			),
+		})
+		await run({ canvas: "F001" })
+		const output = (console.log as any).mock.calls[0][0]
+		expect(output).toContain("| Name | Value |")
+		expect(output).toContain("| A | 1 |")
 	})
 })

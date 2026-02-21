@@ -95,6 +95,10 @@ Options: `--sort timestamp|score`, `--sort-dir asc|desc`, `--limit <n>`, `--page
 ## Canvases
 
 ```bash
+# Read a canvas (outputs markdown)
+holla slack canvases read --canvas <id> -w <ws>
+holla slack canvases read --canvas <id> -w <ws> --json  # includes id, title, markdown, timestamps
+
 # Create (with optional auto-share)
 holla slack canvases create --title "Title" --markdown "content" --channel "#general" -w <ws>
 

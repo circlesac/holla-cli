@@ -5,11 +5,14 @@
   "dependencies": {
     "@circlesac/mack": "^26.2.4",
     "@slack/web-api": "^7.13.0",
-    "citty": "^0.2.0"
+    "citty": "^0.2.0",
+    "turndown": "^7.2.2",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "description": "CLI tool that acts as you on messaging platforms",
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/turndown": "^5.0.6",
     "@vitest/coverage-v8": "^4.0.18",
     "vitest": "^4.0.18"
   },
