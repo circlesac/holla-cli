@@ -34,6 +34,40 @@ describe("normalizeSlackText", () => {
 	it("should not alter plain text", () => {
 		expect(normalizeSlackText("just a normal message")).toBe("just a normal message")
 	})
+
+	it("should convert Slack mrkdwn link to markdown", () => {
+		expect(normalizeSlackText("<https://example.com|click here>")).toBe(
+			"[click here](https://example.com)",
+		)
+	})
+
+	it("should convert multiple Slack mrkdwn links", () => {
+		expect(normalizeSlackText("See <https://a.com|link1> and <https://b.com|link2>")).toBe(
+			"See [link1](https://a.com) and [link2](https://b.com)",
+		)
+	})
+
+	it("should not convert user mentions", () => {
+		expect(normalizeSlackText("<@U01234567>")).toBe("<@U01234567>")
+	})
+
+	it("should not convert channel mentions", () => {
+		expect(normalizeSlackText("<#C01234567>")).toBe("<#C01234567>")
+	})
+
+	it("should not convert special mentions", () => {
+		expect(normalizeSlackText("<!here>")).toBe("<!here>")
+	})
+
+	it("should convert URL without pipe unchanged", () => {
+		expect(normalizeSlackText("<https://example.com>")).toBe("<https://example.com>")
+	})
+
+	it("should handle http links", () => {
+		expect(normalizeSlackText("<http://example.com|Example>")).toBe(
+			"[Example](http://example.com)",
+		)
+	})
 })
 
 describe("sanitizeCanvasMarkdown", () => {

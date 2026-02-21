@@ -1,10 +1,14 @@
 /**
- * Normalize Slack special syntax that gets mangled by shell history expansion.
- * zsh escapes `!` inside `<>`, turning `<!here>` into `<\!here>`.
- * This strips those backslashes so Slack broadcast mentions work correctly.
+ * Normalize Slack-specific syntax in user input before markdown processing.
+ *
+ * 1. Fixes zsh history expansion: `<\!here>` → `<!here>`
+ * 2. Converts Slack mrkdwn links to standard markdown: `<url|text>` → `[text](url)`
+ *    (Only matches http/https URLs — user/channel mentions are preserved.)
  */
 export function normalizeSlackText(text: string): string {
-  return text.replace(/<\\!/g, "<!");
+  return text
+    .replace(/<\\!/g, "<!")
+    .replace(/<(https?:\/\/[^|>]+)\|([^>]+)>/g, "[$2]($1)");
 }
 
 /**
