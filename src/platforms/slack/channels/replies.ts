@@ -30,7 +30,7 @@ export const repliesCommand = defineCommand({
 
       const limit = args.limit ? parseInt(args.limit, 10) : undefined;
 
-      const messages: { ts: string; user: string; text: string }[] = [];
+      const messages: Record<string, unknown>[] = [];
       let cursor: string | undefined = args.cursor;
 
       do {
@@ -42,11 +42,14 @@ export const repliesCommand = defineCommand({
         });
 
         for (const msg of result.messages ?? []) {
-          messages.push({
+          const entry: Record<string, unknown> = {
             ts: msg.ts ?? "",
             user: msg.user ?? "",
             text: msg.text ?? "",
-          });
+          };
+          if (msg.attachments?.length) entry.attachments = msg.attachments;
+          if (msg.files?.length) entry.files = msg.files;
+          messages.push(entry);
         }
 
         cursor = result.response_metadata?.next_cursor || undefined;

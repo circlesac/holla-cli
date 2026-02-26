@@ -42,17 +42,15 @@ export const getCommand = defineCommand({
       }
 
       const format = getOutputFormat(args);
-      const data = {
+      const data: Record<string, unknown> = {
         ts: msg.ts ?? "",
         user: msg.user ?? "",
         text: msg.text ?? "",
       };
+      if (msg.attachments?.length) data.attachments = msg.attachments;
+      if (msg.files?.length) data.files = msg.files;
 
-      if (format === "json") {
-        printOutput(data, format);
-      } else {
-        printOutput(data, format);
-      }
+      printOutput(data, format);
     } catch (error) {
       handleError(error);
     }

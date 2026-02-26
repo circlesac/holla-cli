@@ -46,11 +46,14 @@ export const historyCommand = defineCommand({
           });
 
           for (const msg of result.messages ?? []) {
-            messages.push({
+            const entry: Record<string, unknown> = {
               ts: msg.ts ?? "",
               user: msg.user ?? "",
               text: msg.text ?? "",
-            });
+            };
+            if (msg.attachments?.length) entry.attachments = msg.attachments;
+            if (msg.files?.length) entry.files = msg.files;
+            messages.push(entry);
           }
 
           cursor = result.response_metadata?.next_cursor || undefined;
@@ -65,11 +68,14 @@ export const historyCommand = defineCommand({
           });
 
           for (const msg of result.messages ?? []) {
-            messages.push({
+            const entry: Record<string, unknown> = {
               ts: msg.ts ?? "",
               user: msg.user ?? "",
               text: msg.text ?? "",
-            });
+            };
+            if (msg.attachments?.length) entry.attachments = msg.attachments;
+            if (msg.files?.length) entry.files = msg.files;
+            messages.push(entry);
           }
 
           cursor = result.response_metadata?.next_cursor || undefined;

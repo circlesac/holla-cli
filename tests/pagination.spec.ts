@@ -138,6 +138,24 @@ describe("channels history", () => {
 		)
 	})
 
+	it("should include attachments and files when present", async () => {
+		const attachments = [{ title: "PR #42", text: "Fix bug" }]
+		const files = [{ id: "F001", name: "doc.pdf" }]
+		mockConversationsHistory.mockResolvedValueOnce({
+			messages: [
+				{ ts: "1", user: "U1", text: "", attachments, files },
+				{ ts: "2", user: "U2", text: "plain" },
+			],
+		})
+		await run({ json: true })
+		const output = (console.log as any).mock.calls[0][0]
+		const parsed = JSON.parse(output)
+		expect(parsed[0].attachments).toEqual(attachments)
+		expect(parsed[0].files).toEqual(files)
+		expect(parsed[1].attachments).toBeUndefined()
+		expect(parsed[1].files).toBeUndefined()
+	})
+
 	it("should pass --before as latest", async () => {
 		mockConversationsHistory.mockResolvedValueOnce({ messages: [] })
 		await run({ before: "1700000000.000000" })
