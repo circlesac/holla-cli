@@ -4,7 +4,7 @@ import { getCacheDir } from "../../lib/config.ts";
 import type { WebClient } from "@slack/web-api";
 import type { CacheEntry } from "../../types/index.ts";
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 365 * 24 * 60 * 60 * 1000; // 1 year
 const MAX_SUGGESTIONS = 3;
 
 function levenshtein(a: string, b: string): number {
@@ -70,7 +70,7 @@ async function fetchChannelMap(client: WebClient, workspace: string): Promise<Na
 
   do {
     const result = await client.conversations.list({
-      limit: 200,
+      limit: 1000,
       types: "public_channel,private_channel",
       cursor,
       exclude_archived: true,
@@ -88,24 +88,8 @@ async function fetchChannelMap(client: WebClient, workspace: string): Promise<Na
 }
 
 async function findChannelIdByName(client: WebClient, workspace: string, name: string): Promise<string | undefined> {
-  const cached = await loadCache(workspace, "channels");
-  if (cached) return cached[name];
-
-  let cursor: string | undefined;
-  do {
-    const result = await client.conversations.list({
-      limit: 200,
-      types: "public_channel,private_channel",
-      cursor,
-      exclude_archived: true,
-    });
-    for (const ch of result.channels ?? []) {
-      if (ch.name === name && ch.id) return ch.id;
-    }
-    cursor = result.response_metadata?.next_cursor || undefined;
-  } while (cursor);
-
-  return undefined;
+  const map = await fetchChannelMap(client, workspace);
+  return map[name];
 }
 
 async function fetchUserMap(client: WebClient, workspace: string): Promise<NameMap> {
@@ -116,7 +100,7 @@ async function fetchUserMap(client: WebClient, workspace: string): Promise<NameM
   let cursor: string | undefined;
 
   do {
-    const result = await client.users.list({ limit: 200, cursor });
+    const result = await client.users.list({ limit: 1000, cursor });
     for (const user of result.members ?? []) {
       if (user.name && user.id) {
         map[user.name] = user.id;

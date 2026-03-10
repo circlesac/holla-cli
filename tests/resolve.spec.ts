@@ -59,7 +59,7 @@ describe("resolveChannel", () => {
 		)
 	})
 
-	it("should stop pagination early when channel is found", async () => {
+	it("should fetch all pages and cache the full map", async () => {
 		const { resolveChannel } = await import("../src/platforms/slack/resolve.ts")
 		const client = {
 			conversations: {
@@ -77,7 +77,7 @@ describe("resolveChannel", () => {
 		} as unknown
 		const result = await resolveChannel(client as any, "#general", "ws1")
 		expect(result).toBe("C001")
-		expect((client as any).conversations.list).toHaveBeenCalledTimes(1)
+		expect((client as any).conversations.list).toHaveBeenCalledTimes(2)
 	})
 
 	it("should namespace cache by workspace (regression: cross-workspace collision)", async () => {
