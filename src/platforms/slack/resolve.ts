@@ -4,7 +4,7 @@ import { getCacheDir } from "../../lib/config.ts";
 import type { WebClient } from "@slack/web-api";
 import type { CacheEntry } from "../../types/index.ts";
 
-const CACHE_TTL = 365 * 24 * 60 * 60 * 1000; // 1 year
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
 const MAX_SUGGESTIONS = 3;
 
 function levenshtein(a: string, b: string): number {
