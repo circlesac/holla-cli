@@ -53,6 +53,7 @@ export const historyCommand = defineCommand({
             };
             if (msg.attachments?.length) entry.attachments = msg.attachments;
             if (msg.files?.length) entry.files = msg.files;
+            if (msg.reactions?.length) entry.reactions = msg.reactions;
             messages.push(entry);
           }
 
@@ -75,6 +76,7 @@ export const historyCommand = defineCommand({
             };
             if (msg.attachments?.length) entry.attachments = msg.attachments;
             if (msg.files?.length) entry.files = msg.files;
+            if (msg.reactions?.length) entry.reactions = msg.reactions;
             messages.push(entry);
           }
 
