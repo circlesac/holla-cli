@@ -148,6 +148,7 @@ holla slack stars add --channel <ch> --ts <ts> -w <ws>
 holla slack bookmarks add --channel <ch> --title "Link" --link "https://..." -w <ws>
 holla slack reminders add --text "Do thing" --time "in 1 hour" -w <ws>
 holla slack files upload --channels "#general" --file ./doc.pdf -w <ws>
+holla slack files download --file <file-id> -o ./output.pdf -w <ws>
 holla slack users info --user @username -w <ws> --json
 holla slack api <method> --body '{"key":"value"}' -w <ws>  # Raw API passthrough
 ```
