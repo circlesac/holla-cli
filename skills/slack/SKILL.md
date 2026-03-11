@@ -162,3 +162,24 @@ All read commands support: `--json` (structured), `--plain` (tab-separated), or 
 ## Name resolution
 
 Channels accept `#name` or ID. Users accept `@name` or ID. Fuzzy matching suggests corrections on typos.
+
+## Post-action verification (REQUIRED)
+
+After any write action (send, reply, edit, delete, reactions add/remove, mentions, etc.), **always re-fetch the result** to verify it worked correctly:
+
+```bash
+# After sending/editing a message — verify content and formatting
+holla slack chat get --channel <ch> --ts <ts> -w <ws> --json
+
+# After adding a reaction — verify it appears
+holla slack channels history --channel <ch> --limit 1 -w <ws> --json
+```
+
+**What to check:**
+- **Message content**: Does the rendered text match the intended format? (markdown, line breaks, etc.)
+- **Mentions**: Did `<@USER_ID>` resolve to the correct person? Is the mention actually visible?
+- **Mention removal**: If a message was edited to remove a mention, verify the mention is actually gone in the fetched result
+- **Reactions**: Confirm the reaction emoji name resolved correctly and appears on the right message
+- **Deletions**: Confirm the message/reaction is actually gone
+
+Never assume a write action succeeded — always verify.
