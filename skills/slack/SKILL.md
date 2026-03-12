@@ -92,6 +92,16 @@ holla slack search messages --query "keyword" -w <ws> --json
 
 Options: `--sort timestamp|score`, `--sort-dir asc|desc`, `--limit <n>`, `--page <n>`
 
+### Thread link caveat
+
+`search messages` returns the **reply's ts**, not the parent thread ts (`thread_ts`). This is a Slack Search API limitation.
+Building a URL from the reply ts (`https://...slack.com/archives/CH_ID/pTS`) will **highlight the wrong message or fail to scroll to the thread**.
+
+**To build a correct thread link:**
+1. Fetch the thread: `channels history --channel CH_ID --thread TS`
+2. Read `thread_ts` from the first message (= parent ts)
+3. Build URL with the parent ts: `https://WORKSPACE.slack.com/archives/CH_ID/p{thread_ts without dot}`
+
 ## Canvases
 
 ```bash
