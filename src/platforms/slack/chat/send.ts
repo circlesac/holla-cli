@@ -19,6 +19,14 @@ export const sendCommand = defineCommand({
       description: "Channel name or ID (e.g. #general or C01234567)",
       required: true,
     },
+    ts: {
+      type: "string",
+      description: "Thread timestamp to reply in (e.g. 1234567890.123456)",
+    },
+    thread: {
+      type: "string",
+      description: "Alias for --ts",
+    },
     text: {
       type: "string",
       description: "Message text in markdown format (reads from stdin if omitted)",
@@ -48,7 +56,8 @@ export const sendCommand = defineCommand({
         text = applySuffix(text, attribution.agent, attribution.suffix);
       }
       const blocks = await markdownToBlocks(text);
-      const result = await client.chat.postMessage({ channel, text, blocks });
+      const thread_ts = (args.ts ?? args.thread) || undefined;
+      const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
 
       if (attribution.reaction && result.ts && result.channel) {
         await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
@@ -57,7 +66,9 @@ export const sendCommand = defineCommand({
       const format = getOutputFormat(args);
       const msg = result.message as Record<string, unknown> | undefined;
       if (format === "json") {
-        printOutput({ ts: result.ts, channel: result.channel, text: msg?.text ?? text }, format);
+        const data: Record<string, unknown> = { ts: result.ts, channel: result.channel, text: msg?.text ?? text };
+        if (thread_ts) data.thread_ts = thread_ts;
+        printOutput(data, format);
       } else {
         console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
         if (msg?.text) console.log(`\n  ${String(msg.text).replace(/\n/g, "\n  ")}`);

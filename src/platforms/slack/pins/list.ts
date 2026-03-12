@@ -27,13 +27,15 @@ export const listCommand = defineCommand({
       const items = ((result.items as Record<string, unknown>[] | undefined) ?? []).map(
         (item) => {
           const message = item.message as Record<string, unknown> | undefined;
-          return {
+          const entry: Record<string, unknown> = {
             type: item.type ?? "",
             created: item.created ?? "",
             user: message?.user ?? "",
             ts: message?.ts ?? "",
             text: message?.text ?? "",
           };
+          if (message?.thread_ts) entry.thread_ts = message.thread_ts;
+          return entry;
         },
       );
 

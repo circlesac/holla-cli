@@ -47,6 +47,8 @@ export const getCommand = defineCommand({
         user: msg.user ?? "",
         text: msg.text ?? "",
       };
+      if (msg.thread_ts) data.thread_ts = msg.thread_ts;
+      if (msg.reply_count) data.reply_count = msg.reply_count;
       if (msg.attachments?.length) data.attachments = msg.attachments;
       if (msg.files?.length) data.files = msg.files;
 

@@ -29,13 +29,15 @@ export const listCommand = defineCommand({
         for (const item of (result.items as Record<string, unknown>[] | undefined) ?? []) {
           const message = item.message as Record<string, unknown> | undefined;
           const file = item.file as Record<string, unknown> | undefined;
-          items.push({
+          const entry: Record<string, unknown> = {
             type: item.type ?? "",
             channel: message?.channel ?? item.channel ?? "",
             ts: message?.ts ?? "",
             text: message?.text ?? file?.name ?? "",
             date_create: item.date_create ?? "",
-          });
+          };
+          if (message?.thread_ts) entry.thread_ts = message.thread_ts;
+          items.push(entry);
         }
 
         cursor = result.response_metadata?.next_cursor || undefined;

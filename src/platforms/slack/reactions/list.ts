@@ -28,7 +28,7 @@ export const listCommand = defineCommand({
       type ReactionItem = {
         type: string;
         channel?: string;
-        message?: { ts: string; text: string; reactions?: { name: string; count: number }[] };
+        message?: { ts: string; text: string; thread_ts?: string; reactions?: { name: string; count: number }[] };
       };
 
       const allItems: ReactionItem[] = [];
@@ -50,15 +50,19 @@ export const listCommand = defineCommand({
         cursor = result.response_metadata?.next_cursor || undefined;
       } while (args.all && cursor);
 
-      const rows = allItems.map((item) => ({
-        type: item.type,
-        channel: item.channel ?? "",
-        ts: item.message?.ts ?? "",
-        text: (item.message?.text ?? "").slice(0, 80),
-        reactions: (item.message?.reactions ?? [])
-          .map((r) => `:${r.name}: (${r.count})`)
-          .join(", "),
-      }));
+      const rows = allItems.map((item) => {
+        const row: Record<string, string> = {
+          type: item.type,
+          channel: item.channel ?? "",
+          ts: item.message?.ts ?? "",
+          text: (item.message?.text ?? "").slice(0, 80),
+          reactions: (item.message?.reactions ?? [])
+            .map((r) => `:${r.name}: (${r.count})`)
+            .join(", "),
+        };
+        if (item.message?.thread_ts) row.thread_ts = item.message.thread_ts;
+        return row;
+      });
 
       printOutput(rows, getOutputFormat(args), [
         { key: "type", label: "Type" },
