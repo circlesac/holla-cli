@@ -106,10 +106,15 @@ async function loginWithOAuth(
       process.platform === "darwin"
         ? "open"
         : process.platform === "win32"
-          ? "start"
+          ? "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
           : "xdg-open";
 
-    Bun.spawn([openCmd, authUrl.toString()], {
+    const openArgs =
+      process.platform === "win32"
+        ? [openCmd, "-NoProfile", "-Command", `Start-Process "${authUrl.toString()}"`]
+        : [openCmd, authUrl.toString()];
+
+    Bun.spawn(openArgs, {
       stdout: "ignore",
       stderr: "ignore",
     });
