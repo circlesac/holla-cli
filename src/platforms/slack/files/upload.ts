@@ -11,6 +11,7 @@ export const uploadCommand = defineCommand({
     channel: {
       type: "string",
       description: "Channel ID or #name to share the file in",
+      required: true,
     },
     file: {
       type: "string",
@@ -25,16 +26,19 @@ export const uploadCommand = defineCommand({
       type: "string",
       description: "Initial comment for the file",
     },
+    ts: {
+      type: "string",
+      description: "Thread timestamp to upload in",
+      alias: "thread",
+      required: true,
+    },
   },
   async run({ args }) {
     try {
       const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      let channelId: string | undefined;
-      if (args.channel) {
-        channelId = await resolveChannel(client, args.channel, workspace);
-      }
+      const channelId = await resolveChannel(client, args.channel, workspace);
 
       const bunFile = Bun.file(args.file);
       const content = await bunFile.arrayBuffer();
@@ -46,6 +50,7 @@ export const uploadCommand = defineCommand({
         filename,
         title: args.title,
         initial_comment: args.comment as string | undefined,
+        thread_ts: args.ts as string,
       });
 
       console.log(
