@@ -44,13 +44,16 @@ export const listCommand = defineCommand({
         const result = await client.files.list(params);
 
         for (const f of (result.files as Record<string, unknown>[] | undefined) ?? []) {
-          files.push({
+          const entry: Record<string, unknown> = {
             id: f.id ?? "",
             name: f.name ?? "",
             filetype: f.filetype ?? "",
             size: f.size ?? 0,
             timestamp: f.timestamp ?? "",
-          });
+          };
+          if (f.permalink) entry.permalink = f.permalink;
+          if (f.url_private_download) entry.url_private_download = f.url_private_download;
+          files.push(entry);
         }
 
         cursor = result.response_metadata?.next_cursor || undefined;
@@ -62,6 +65,7 @@ export const listCommand = defineCommand({
         { key: "filetype", label: "Type" },
         { key: "size", label: "Size" },
         { key: "timestamp", label: "Timestamp" },
+        { key: "permalink", label: "Permalink" },
       ]);
     } catch (error) {
       handleError(error);

@@ -35,6 +35,8 @@ export const listCommand = defineCommand({
             text: message?.text ?? "",
           };
           if (message?.thread_ts) entry.thread_ts = message.thread_ts;
+          if (message?.edited) entry.edited = message.edited;
+          if ((message as Record<string, unknown>)?.reactions) entry.reactions = (message as Record<string, unknown>).reactions;
           return entry;
         },
       );

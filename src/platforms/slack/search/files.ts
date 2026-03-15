@@ -35,20 +35,24 @@ export const filesCommand = defineCommand({
       });
 
       const filesResult = result.files as {
-        matches?: { id: string; name: string; title: string; filetype: string; user: string }[];
+        matches?: { id: string; name: string; title: string; filetype: string; user: string; permalink?: string }[];
         paging?: { page?: number; pages?: number; total?: number };
       };
       const files = filesResult?.matches ?? [];
 
       printPaging("", filesResult?.paging);
 
-      const rows = files.map((f) => ({
-        id: f.id,
-        name: f.name,
-        title: f.title,
-        type: f.filetype,
-        user: f.user,
-      }));
+      const rows = files.map((f) => {
+        const row: Record<string, string> = {
+          id: f.id,
+          name: f.name,
+          title: f.title,
+          type: f.filetype,
+          user: f.user,
+        };
+        if (f.permalink) row.permalink = f.permalink;
+        return row;
+      });
 
       printOutput(rows, getOutputFormat(args), [
         { key: "id", label: "ID" },
@@ -56,6 +60,7 @@ export const filesCommand = defineCommand({
         { key: "title", label: "Title" },
         { key: "type", label: "Type" },
         { key: "user", label: "User" },
+        { key: "permalink", label: "Permalink" },
       ]);
     } catch (error) {
       handleError(error);

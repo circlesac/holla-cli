@@ -48,6 +48,9 @@ export const repliesCommand = defineCommand({
             text: msg.text ?? "",
           };
           if (msg.thread_ts) entry.thread_ts = msg.thread_ts;
+          if (msg.reply_count) entry.reply_count = msg.reply_count;
+          if (msg.reply_users_count) entry.reply_users_count = msg.reply_users_count;
+          if (msg.edited) entry.edited = msg.edited;
           if (msg.attachments?.length) entry.attachments = msg.attachments;
           if (msg.files?.length) entry.files = msg.files;
           if (msg.reactions?.length) entry.reactions = msg.reactions;

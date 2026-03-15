@@ -37,6 +37,9 @@ export const listCommand = defineCommand({
             date_create: item.date_create ?? "",
           };
           if (message?.thread_ts) entry.thread_ts = message.thread_ts;
+          if (message?.edited) entry.edited = message.edited;
+          const permalink = (message?.permalink ?? file?.permalink ?? "") as string;
+          if (permalink) entry.permalink = permalink;
           items.push(entry);
         }
 
@@ -49,6 +52,7 @@ export const listCommand = defineCommand({
         { key: "ts", label: "Timestamp" },
         { key: "text", label: "Text" },
         { key: "date_create", label: "Starred At" },
+        { key: "permalink", label: "Permalink" },
       ]);
     } catch (error) {
       handleError(error);

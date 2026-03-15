@@ -51,6 +51,8 @@ export const getCommand = defineCommand({
       if (msg.reply_count) data.reply_count = msg.reply_count;
       if (msg.attachments?.length) data.attachments = msg.attachments;
       if (msg.files?.length) data.files = msg.files;
+      if (msg.reactions?.length) data.reactions = msg.reactions;
+      if (msg.edited) data.edited = msg.edited;
 
       printOutput(data, format);
     } catch (error) {

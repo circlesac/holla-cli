@@ -35,31 +35,34 @@ export const messagesCommand = defineCommand({
       });
 
       const messagesResult = result.messages as {
-        matches?: { channel?: { id?: string; name: string }; username?: string; ts: string; text: string; thread_ts?: string }[];
+        matches?: { channel?: { id?: string; name: string }; username?: string; ts: string; text: string; thread_ts?: string; permalink?: string }[];
         paging?: { page?: number; pages?: number; total?: number };
       };
       const messages = messagesResult?.matches ?? [];
 
       printPaging("", messagesResult?.paging);
 
+      const format = getOutputFormat(args);
       const rows = messages.map((m) => {
         const row: Record<string, string> = {
           channelId: m.channel?.id ?? "",
           channel: m.channel?.name ?? "",
           user: m.username ?? "",
           ts: m.ts,
-          text: (m.text ?? "").slice(0, 80),
+          text: format === "json" ? (m.text ?? "") : (m.text ?? "").slice(0, 80),
         };
         if (m.thread_ts) row.thread_ts = m.thread_ts;
+        if (m.permalink) row.permalink = m.permalink;
         return row;
       });
 
-      printOutput(rows, getOutputFormat(args), [
+      printOutput(rows, format, [
         { key: "channelId", label: "Channel ID" },
         { key: "channel", label: "Channel" },
         { key: "user", label: "User" },
         { key: "ts", label: "Timestamp" },
         { key: "text", label: "Text" },
+        { key: "permalink", label: "Permalink" },
       ]);
     } catch (error) {
       handleError(error);
