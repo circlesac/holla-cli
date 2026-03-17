@@ -187,3 +187,11 @@ holla slack channels history --channel <ch> --limit 1 -w <ws> --json
 - **Deletions**: Confirm the message/reaction is actually gone
 
 Never assume a write action succeeded — always verify.
+
+**After verification, always provide the permalink** so the user can check the result themselves:
+
+```bash
+holla slack chat permalink --channel <ch> --ts <ts> -w <ws>
+```
+
+Report the permalink URL back to the user along with the verification result.
