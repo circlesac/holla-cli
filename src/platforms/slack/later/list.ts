@@ -50,6 +50,7 @@ export const listCommand = defineCommand({
         state: string;
         date_created: number;
         date_due?: number;
+        date_snoozed_until?: number;
       };
 
       const limitNum = args.limit ? parseInt(args.limit, 10) : 50;
@@ -84,6 +85,7 @@ export const listCommand = defineCommand({
         state: item.state,
         date_created: new Date(item.date_created * 1000).toISOString(),
         date_due: item.date_due ? new Date(item.date_due * 1000).toISOString() : "",
+        date_snoozed_until: item.date_snoozed_until ? new Date(item.date_snoozed_until * 1000).toISOString() : "",
       }));
 
       printOutput(rows, getOutputFormat(args), [
@@ -93,6 +95,7 @@ export const listCommand = defineCommand({
         { key: "state", label: "State" },
         { key: "date_created", label: "Saved At" },
         { key: "date_due", label: "Due" },
+        { key: "date_snoozed_until", label: "Snoozed Until" },
       ]);
     } catch (error) {
       handleError(error);

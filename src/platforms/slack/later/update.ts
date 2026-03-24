@@ -58,7 +58,7 @@ export function parseTimeExpression(input: string): string {
 }
 
 export const updateCommand = defineCommand({
-  meta: { name: "update", description: "Update a Later item (due date, snooze, todo state)" },
+  meta: { name: "update", description: "Update a Later item (due date, snooze)" },
   args: {
     ...commonArgs,
     "item-id": {
@@ -79,15 +79,11 @@ export const updateCommand = defineCommand({
       type: "string",
       description: "Snooze (e.g. 30m, 1h, 3h, tomorrow, monday, or Unix timestamp; 0 to clear)",
     },
-    "todo-state": {
-      type: "string",
-      description: "Todo state: to_do or completed",
-    },
   },
   async run({ args }) {
     try {
-      if (!args["date-due"] && !args.snooze && !args["todo-state"]) {
-        console.error("At least one of --date-due, --snooze, or --todo-state is required");
+      if (!args["date-due"] && !args.snooze) {
+        console.error("At least one of --date-due or --snooze is required");
         process.exit(1);
       }
 
@@ -101,7 +97,6 @@ export const updateCommand = defineCommand({
 
       if (args["date-due"]) params.date_due = parseTimeExpression(args["date-due"]);
       if (args.snooze) params.date_snoozed_until = parseTimeExpression(args.snooze);
-      if (args["todo-state"]) params.todo_state = args["todo-state"];
 
       await callSavedApi(workspace, "saved.update", browserToken, browserCookie, params);
 
