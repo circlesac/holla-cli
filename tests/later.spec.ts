@@ -199,6 +199,13 @@ describe("later list", () => {
 		)
 	})
 
+	it("rejects --limit exceeding 50", async () => {
+		const mockExit = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit") })
+		await expect(run({ limit: "51" })).rejects.toThrow("exit")
+		expect(console.error).toHaveBeenCalledWith(expect.stringContaining("cannot exceed 50"))
+		mockExit.mockRestore()
+	})
+
 	it("outputs empty string for missing date_snoozed_until", async () => {
 		mockFetchResponse({
 			ok: true,
@@ -316,9 +323,25 @@ describe("later update", () => {
 		expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Updated Later item"))
 	})
 
-	it("does not have --todo-state option (unsupported by Slack API)", async () => {
-		const { updateCommand } = await import("../src/platforms/slack/later/update.ts")
-		const argKeys = Object.keys((updateCommand as any).args)
-		expect(argKeys).not.toContain("todo-state")
+	it("sends mark and todo_state when --mark completed provided", async () => {
+		mockFetchResponse({ ok: true })
+
+		await run({ "item-id": "C001", ts: "111.222", mark: "completed" })
+
+		const body = mockFetch.mock.calls[0][1].body
+		const params = new URLSearchParams(body)
+		expect(params.get("mark")).toBe("completed")
+		expect(params.get("todo_state")).toBe("completed")
+	})
+
+	it("sends mark and todo_state when --mark uncompleted provided", async () => {
+		mockFetchResponse({ ok: true })
+
+		await run({ "item-id": "C001", ts: "111.222", mark: "uncompleted" })
+
+		const body = mockFetch.mock.calls[0][1].body
+		const params = new URLSearchParams(body)
+		expect(params.get("mark")).toBe("uncompleted")
+		expect(params.get("todo_state")).toBe("uncompleted")
 	})
 })
