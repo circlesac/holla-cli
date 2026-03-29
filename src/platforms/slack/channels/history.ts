@@ -28,6 +28,10 @@ export const historyCommand = defineCommand({
       type: "string",
       description: "Only messages before this timestamp (latest)",
     },
+    after: {
+      type: "string",
+      description: "Only messages after this timestamp (oldest)",
+    },
   },
   async run({ args }) {
     try {
@@ -80,6 +84,7 @@ export const historyCommand = defineCommand({
                 ...(limit !== undefined ? { limit } : {}),
                 cursor,
                 latest: args.before,
+                oldest: args.after,
               }),
             );
 
