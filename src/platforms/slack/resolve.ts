@@ -3,6 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { getCacheDir } from "../../lib/config.ts";
 import type { WebClient } from "@slack/web-api";
 import type { CacheEntry } from "../../types/index.ts";
+import { rateLimitRetry } from "../../lib/rate-limit.ts";
 
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
 const MAX_SUGGESTIONS = 3;
@@ -69,12 +70,14 @@ async function fetchChannelMap(client: WebClient, workspace: string): Promise<Na
   let cursor: string | undefined;
 
   do {
-    const result = await client.conversations.list({
-      limit: 1000,
-      types: "public_channel,private_channel",
-      cursor,
-      exclude_archived: true,
-    });
+    const result = await rateLimitRetry(() =>
+      client.conversations.list({
+        limit: 1000,
+        types: "public_channel,private_channel",
+        cursor,
+        exclude_archived: true,
+      }),
+    );
     for (const ch of result.channels ?? []) {
       if (ch.name && ch.id) {
         map[ch.name] = ch.id;
@@ -100,7 +103,9 @@ async function fetchUserMap(client: WebClient, workspace: string): Promise<NameM
   let cursor: string | undefined;
 
   do {
-    const result = await client.users.list({ limit: 1000, cursor });
+    const result = await rateLimitRetry(() =>
+      client.users.list({ limit: 1000, cursor }),
+    );
     for (const user of result.members ?? []) {
       if (user.name && user.id) {
         map[user.name] = user.id;
@@ -162,7 +167,7 @@ export async function resolveGroup(
   client: WebClient,
   input: string,
 ): Promise<ResolvedGroup> {
-  const result = await client.usergroups.list();
+  const result = await rateLimitRetry(() => client.usergroups.list());
   const groups = (result.usergroups ?? []) as Array<{ id?: string; name?: string; handle?: string }>;
 
   const handles = groups.map((g) => g.handle ?? "").filter(Boolean);
