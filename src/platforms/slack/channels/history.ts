@@ -5,6 +5,10 @@ import { resolveChannel } from "../resolve.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, cursorPaginationArgs } from "../../../lib/args.ts";
+import {
+  rateLimitRetry,
+  RateLimitTimeoutError,
+} from "../../../lib/rate-limit.ts";
 
 export const historyCommand = defineCommand({
   meta: { name: "history", description: "Fetch channel message history" },
@@ -35,61 +39,83 @@ export const historyCommand = defineCommand({
 
       const messages: Record<string, unknown>[] = [];
       let cursor: string | undefined = args.cursor;
+      let partial = false;
 
-      if (args.thread) {
-        do {
-          const result = await client.conversations.replies({
-            channel: channelId,
-            ts: args.thread,
-            ...(limit !== undefined ? { limit } : {}),
-            cursor,
-          });
+      try {
+        if (args.thread) {
+          do {
+            const result = await rateLimitRetry(() =>
+              client.conversations.replies({
+                channel: channelId,
+                ts: args.thread!,
+                ...(limit !== undefined ? { limit } : {}),
+                cursor,
+              }),
+            );
 
-          for (const msg of result.messages ?? []) {
-            const entry: Record<string, unknown> = {
-              ts: msg.ts ?? "",
-              user: msg.user ?? "",
-              text: msg.text ?? "",
-            };
-            if (msg.thread_ts) entry.thread_ts = msg.thread_ts;
-            if (msg.reply_count) entry.reply_count = msg.reply_count;
-            if (msg.reply_users_count) entry.reply_users_count = msg.reply_users_count;
-            if (msg.edited) entry.edited = msg.edited;
-            if (msg.attachments?.length) entry.attachments = msg.attachments;
-            if (msg.files?.length) entry.files = msg.files;
-            if (msg.reactions?.length) entry.reactions = msg.reactions;
-            messages.push(entry);
-          }
+            for (const msg of result.messages ?? []) {
+              const entry: Record<string, unknown> = {
+                ts: msg.ts ?? "",
+                user: msg.user ?? "",
+                text: msg.text ?? "",
+              };
+              if (msg.thread_ts) entry.thread_ts = msg.thread_ts;
+              if (msg.reply_count) entry.reply_count = msg.reply_count;
+              if (msg.reply_users_count)
+                entry.reply_users_count = msg.reply_users_count;
+              if (msg.edited) entry.edited = msg.edited;
+              if (msg.attachments?.length) entry.attachments = msg.attachments;
+              if (msg.files?.length) entry.files = msg.files;
+              if (msg.reactions?.length) entry.reactions = msg.reactions;
+              messages.push(entry);
+            }
 
-          cursor = result.response_metadata?.next_cursor || undefined;
-        } while (args.all && cursor);
-      } else {
-        do {
-          const result = await client.conversations.history({
-            channel: channelId,
-            ...(limit !== undefined ? { limit } : {}),
-            cursor,
-            latest: args.before,
-          });
+            cursor = result.response_metadata?.next_cursor || undefined;
+          } while (args.all && cursor);
+        } else {
+          do {
+            const result = await rateLimitRetry(() =>
+              client.conversations.history({
+                channel: channelId,
+                ...(limit !== undefined ? { limit } : {}),
+                cursor,
+                latest: args.before,
+              }),
+            );
 
-          for (const msg of result.messages ?? []) {
-            const entry: Record<string, unknown> = {
-              ts: msg.ts ?? "",
-              user: msg.user ?? "",
-              text: msg.text ?? "",
-            };
-            if (msg.thread_ts) entry.thread_ts = msg.thread_ts;
-            if (msg.reply_count) entry.reply_count = msg.reply_count;
-            if (msg.reply_users_count) entry.reply_users_count = msg.reply_users_count;
-            if (msg.edited) entry.edited = msg.edited;
-            if (msg.attachments?.length) entry.attachments = msg.attachments;
-            if (msg.files?.length) entry.files = msg.files;
-            if (msg.reactions?.length) entry.reactions = msg.reactions;
-            messages.push(entry);
-          }
+            for (const msg of result.messages ?? []) {
+              const entry: Record<string, unknown> = {
+                ts: msg.ts ?? "",
+                user: msg.user ?? "",
+                text: msg.text ?? "",
+              };
+              if (msg.thread_ts) entry.thread_ts = msg.thread_ts;
+              if (msg.reply_count) entry.reply_count = msg.reply_count;
+              if (msg.reply_users_count)
+                entry.reply_users_count = msg.reply_users_count;
+              if (msg.edited) entry.edited = msg.edited;
+              if (msg.attachments?.length) entry.attachments = msg.attachments;
+              if (msg.files?.length) entry.files = msg.files;
+              if (msg.reactions?.length) entry.reactions = msg.reactions;
+              messages.push(entry);
+            }
 
-          cursor = result.response_metadata?.next_cursor || undefined;
-        } while (args.all && cursor);
+            cursor = result.response_metadata?.next_cursor || undefined;
+          } while (args.all && cursor);
+        }
+      } catch (error) {
+        if (error instanceof RateLimitTimeoutError) {
+          partial = true;
+        } else {
+          throw error;
+        }
+      }
+
+      if (partial) {
+        console.error(
+          `\x1b[33m⚠\x1b[0m Rate limit timeout: returning ${messages.length} messages (partial). Use --before with the oldest timestamp to fetch more.`,
+        );
+        process.exitCode = 1;
       }
 
       printOutput(messages, getOutputFormat(args), [
