@@ -8,6 +8,7 @@
         "@circlesac/mack": "^26.2.4",
         "@slack/web-api": "^7.13.0",
         "citty": "^0.2.0",
+        "snappyjs": "^0.7.0",
         "turndown": "^7.2.2",
         "turndown-plugin-gfm": "^1.0.2",
       },
@@ -306,6 +307,8 @@
     "semver": ["semver@7.7.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA=="],
 
     "siginfo": ["siginfo@2.0.0", "", {}, "sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g=="],
+
+    "snappyjs": ["snappyjs@0.7.0", "", {}, "sha512-u5iEEXkMe2EInQio6Wv9LWHOQYRDbD2O9hzS27GpT/lwfIQhTCnHCTqedqHIHe9ZcvQo+9au6vngQayipz1NYw=="],
 
     "source-map-js": ["source-map-js@1.2.1", "", {}, "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="],
 
