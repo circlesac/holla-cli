@@ -3,7 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
-import { normalizeSlackText } from "../text.ts";
+import { normalizeSlackText, validateTableBlocks } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, attributionArgs } from "../../../lib/args.ts";
@@ -49,6 +49,7 @@ export const editCommand = defineCommand({
 
       text = normalizeSlackText(text);
       const blocks = await markdownToBlocks(text);
+      validateTableBlocks(blocks);
       const result = await client.chat.update({
         channel,
         ts: args.ts,

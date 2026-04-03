@@ -1,4 +1,4 @@
-import { normalizeSlackText, sanitizeCanvasMarkdown } from "../src/platforms/slack/text.ts"
+import { normalizeSlackText, sanitizeCanvasMarkdown, validateTableBlocks } from "../src/platforms/slack/text.ts"
 
 describe("normalizeSlackText", () => {
 	it("should fix zsh-escaped <!here>", () => {
@@ -67,6 +67,66 @@ describe("normalizeSlackText", () => {
 		expect(normalizeSlackText("<http://example.com|Example>")).toBe(
 			"[Example](http://example.com)",
 		)
+	})
+})
+
+describe("validateTableBlocks", () => {
+	const mockExit = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("process.exit") })
+	const mockError = vi.spyOn(console, "error").mockImplementation(() => {})
+
+	afterEach(() => {
+		mockExit.mockClear()
+		mockError.mockClear()
+	})
+
+	it("should pass with zero tables", () => {
+		const blocks = [{ type: "section", text: { type: "mrkdwn", text: "hello" } }] as any
+		expect(() => validateTableBlocks(blocks)).not.toThrow()
+	})
+
+	it("should pass with exactly one table", () => {
+		const blocks = [
+			{ type: "section", text: { type: "mrkdwn", text: "hello" } },
+			{ type: "table", rows: [] },
+		] as any
+		expect(() => validateTableBlocks(blocks)).not.toThrow()
+	})
+
+	it("should fail with multiple tables", () => {
+		const blocks = [
+			{ type: "table", rows: [] },
+			{ type: "section", text: { type: "mrkdwn", text: "middle" } },
+			{ type: "table", rows: [] },
+		] as any
+		expect(() => validateTableBlocks(blocks)).toThrow("process.exit")
+		expect(mockError).toHaveBeenCalledWith(expect.stringContaining("one table per message"))
+	})
+
+	it("should fail with empty header cell", () => {
+		const blocks = [
+			{
+				type: "table",
+				rows: [
+					[{ type: "raw_text", text: "" }, { type: "raw_text", text: "B" }],
+					[{ type: "raw_text", text: "1" }, { type: "raw_text", text: "2" }],
+				],
+			},
+		] as any
+		expect(() => validateTableBlocks(blocks)).toThrow("process.exit")
+		expect(mockError).toHaveBeenCalledWith(expect.stringContaining("header cells cannot be empty"))
+	})
+
+	it("should pass with all header cells filled", () => {
+		const blocks = [
+			{
+				type: "table",
+				rows: [
+					[{ type: "raw_text", text: "A" }, { type: "raw_text", text: "B" }],
+					[{ type: "raw_text", text: "1" }, { type: "raw_text", text: "2" }],
+				],
+			},
+		] as any
+		expect(() => validateTableBlocks(blocks)).not.toThrow()
 	})
 })
 

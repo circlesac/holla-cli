@@ -1,3 +1,30 @@
+import type { KnownBlock } from "@slack/types";
+import type { RichTextBlock, TableBlock, VideoBlock } from "@circlesac/mack";
+
+/**
+ * Validate blocks for known Slack API restrictions on tables.
+ *
+ * 1. Only one table block is allowed per message.
+ * 2. Empty header cells (first row) are rejected by the API.
+ */
+export function validateTableBlocks(blocks: (KnownBlock | TableBlock | RichTextBlock | VideoBlock)[]): void {
+  const tables = blocks.filter((b): b is TableBlock => b.type === "table");
+  if (tables.length > 1) {
+    console.error("\x1b[31m✗\x1b[0m Slack only allows one table per message. Split into separate messages or combine into a single table.");
+    process.exit(1);
+  }
+  for (const table of tables) {
+    const headerRow = table.rows?.[0];
+    if (headerRow) {
+      const hasEmpty = headerRow.some((cell: any) => cell.type === "raw_text" && (!cell.text || cell.text.trim() === ""));
+      if (hasEmpty) {
+        console.error("\x1b[31m✗\x1b[0m Table header cells cannot be empty. Slack rejects tables with blank header cells — use a placeholder like \"-\" or a space.");
+        process.exit(1);
+      }
+    }
+  }
+}
+
 /**
  * Normalize Slack-specific syntax in user input before markdown processing.
  *

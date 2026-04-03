@@ -3,7 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel, resolveUser } from "../resolve.ts";
-import { normalizeSlackText } from "../text.ts";
+import { normalizeSlackText, validateTableBlocks } from "../text.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { attributionArgs } from "../../../lib/args.ts";
 import { getAttributionConfig, applySuffix } from "../../../lib/attribution.ts";
@@ -65,6 +65,7 @@ export const whisperCommand = defineCommand({
         text = applySuffix(text, attribution.agent, attribution.suffix);
       }
       const blocks = await markdownToBlocks(text);
+      validateTableBlocks(blocks);
       const thread_ts = (args.ts ?? args.thread) || undefined;
       const result = await client.chat.postEphemeral({
         channel,

@@ -3,7 +3,7 @@ import { markdownToBlocks } from "@circlesac/mack";
 import { getToken } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
-import { normalizeSlackText } from "../text.ts";
+import { normalizeSlackText, validateTableBlocks } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, attributionArgs } from "../../../lib/args.ts";
@@ -56,6 +56,7 @@ export const sendCommand = defineCommand({
         text = applySuffix(text, attribution.agent, attribution.suffix);
       }
       const blocks = await markdownToBlocks(text);
+      validateTableBlocks(blocks);
       const thread_ts = (args.ts ?? args.thread) || undefined;
       const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
 
