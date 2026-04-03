@@ -40,6 +40,8 @@ holla slack chat delete --channel "#general" --ts 1234567890.123456 -w <ws>
 
 Slack requires `<@USER_ID>` format for mentions — plain names like `@john` won't notify anyone.
 
+When the user asks you to send a message to a specific person (e.g. "send this to John"), you must mention that person using `<@USER_ID>` format so they receive a notification. Look up the user ID before drafting the message, and include the mention in the draft shown to the user — not just in the final sent message.
+
 ### Workflow
 
 1. Look up channel members to find the user ID:
