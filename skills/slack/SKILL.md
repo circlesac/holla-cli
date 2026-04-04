@@ -36,6 +36,20 @@ holla slack chat delete --channel "#general" --ts 1234567890.123456 -w <ws>
 
 `--text` accepts standard markdown (converted to Slack blocks automatically). Use `--json` to get `{ ts, channel, text }` back after sending.
 
+### Markdown formatting gotchas
+
+holla uses **standard markdown**, not Slack mrkdwn. Key differences:
+
+| What you want | Write this | NOT this |
+|---|---|---|
+| **Bold** | `**text**` | `*text*` (renders as italic) |
+| *Italic* | `*text*` or `_text_` | |
+| ~~Strikethrough~~ | `~text~` | |
+
+**Tilde (`~`) as range separator**: Slack interprets two `~` in the same text as strikethrough (e.g. `70~80% ... 20~30%` strikes through everything between them). Use fullwidth tilde `～` (U+FF5E) instead — visually identical, no strikethrough trigger.
+
+**Bold adjacent to non-Latin text**: `**text**` followed immediately by CJK characters (e.g. `**회사**만`) may render as `_회사_만` with visible underscores. Add a space after the closing `**`: `**회사** 만`.
+
 ## Mentioning users
 
 Slack requires `<@USER_ID>` format for mentions — plain names like `@john` won't notify anyone.
