@@ -64,6 +64,10 @@ jobs:
       - name: Build binary
         run: |
           bun build --compile --target=${{ matrix.target }} --outfile=holla src/index.ts
+          if [[ "${{ matrix.target }}" == bun-darwin-* ]]; then
+            codesign --remove-signature holla
+            codesign --force --deep -s - holla
+          fi
           tar czf ${{ matrix.name }}.tar.gz holla
 
       - uses: actions/upload-artifact@v4
