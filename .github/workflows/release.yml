@@ -33,17 +33,21 @@ jobs:
 
   build:
     needs: version
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - target: bun-darwin-x64
+          - os: macos-latest
+            target: bun-darwin-x64
             name: holla-darwin-x64
-          - target: bun-darwin-arm64
+          - os: macos-latest
+            target: bun-darwin-arm64
             name: holla-darwin-arm64
-          - target: bun-linux-x64
+          - os: ubuntu-latest
+            target: bun-linux-x64
             name: holla-linux-x64
-          - target: bun-linux-arm64
+          - os: ubuntu-latest
+            target: bun-linux-arm64
             name: holla-linux-arm64
 
     steps:
