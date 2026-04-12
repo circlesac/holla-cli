@@ -92,14 +92,13 @@ describe("validateTableBlocks", () => {
 		expect(() => validateTableBlocks(blocks)).not.toThrow()
 	})
 
-	it("should fail with multiple tables", () => {
+	it("should pass with multiple tables", () => {
 		const blocks = [
 			{ type: "table", rows: [] },
 			{ type: "section", text: { type: "mrkdwn", text: "middle" } },
 			{ type: "table", rows: [] },
 		] as any
-		expect(() => validateTableBlocks(blocks)).toThrow("process.exit")
-		expect(mockError).toHaveBeenCalledWith(expect.stringContaining("one table per message"))
+		expect(() => validateTableBlocks(blocks)).not.toThrow()
 	})
 
 	it("should fail with empty header cell", () => {
