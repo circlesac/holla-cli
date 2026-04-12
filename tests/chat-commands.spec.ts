@@ -157,6 +157,20 @@ describe("reply command", () => {
 			expect.objectContaining({ blocks: [{ type: "section" }] }),
 		)
 	})
+
+	it("should pass reply_broadcast when --broadcast is set", async () => {
+		await runReply({ text: "hi", thread: "1234567890.123456", broadcast: true })
+		expect(mockPostMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ reply_broadcast: true }),
+		)
+	})
+
+	it("should not pass reply_broadcast when --broadcast is not set", async () => {
+		await runReply({ text: "hi", thread: "1234567890.123456" })
+		expect(mockPostMessage).toHaveBeenCalledWith(
+			expect.not.objectContaining({ reply_broadcast: true }),
+		)
+	})
 })
 
 describe("edit command", () => {

@@ -32,6 +32,11 @@ export const replyCommand = defineCommand({
       description: "Message text in markdown format (reads from stdin if omitted)",
       alias: ["message", "m"],
     },
+    broadcast: {
+      type: "boolean" as const,
+      description: "Also send reply to the channel (reply_broadcast)",
+      default: false,
+    },
   },
   async run({ args }) {
     try {
@@ -63,7 +68,8 @@ export const replyCommand = defineCommand({
       }
       const blocks = await markdownToBlocks(text);
       validateTableBlocks(blocks);
-      const result = await client.chat.postMessage({ channel, text, blocks, thread_ts });
+      const reply_broadcast = args.broadcast ? true : undefined;
+      const result = await client.chat.postMessage({ channel, text, blocks, thread_ts, reply_broadcast });
 
       if (attribution.reaction && result.ts && result.channel) {
         await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
