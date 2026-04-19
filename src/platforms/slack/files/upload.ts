@@ -28,9 +28,8 @@ export const uploadCommand = defineCommand({
     },
     ts: {
       type: "string",
-      description: "Thread timestamp to upload in",
+      description: "Thread timestamp to upload in (optional — omit for a top-level post)",
       alias: "thread",
-      required: true,
     },
   },
   async run({ args }) {
@@ -50,7 +49,7 @@ export const uploadCommand = defineCommand({
         filename,
         title: args.title,
         initial_comment: args.comment as string | undefined,
-        thread_ts: args.ts as string,
+        thread_ts: (args.ts as string | undefined) || undefined,
       });
 
       console.log(
