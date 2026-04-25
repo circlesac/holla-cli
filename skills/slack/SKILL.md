@@ -36,15 +36,18 @@ holla slack chat delete --channel "#general" --ts 1234567890.123456 -w <ws>
 
 `--text` accepts standard markdown (converted to Slack blocks automatically). Use `--json` to get `{ ts, channel, text }` back after sending.
 
-### Markdown formatting gotchas
+### Markdown formatting — READ THIS BEFORE SENDING
 
-holla uses **standard markdown**, not Slack mrkdwn. Key differences:
+> ⚠️ **holla expects STANDARD MARKDOWN, not Slack mrkdwn.** holla converts to Slack blocks server-side. **Do not pre-convert your text to Slack mrkdwn.** A common mistake is "fixing" `**bold**` to `*bold*` thinking Slack needs that — this DOUBLE-CONVERTS and the bold disappears.
+>
+> Rule of thumb: write the text exactly the way you'd write it in a normal Markdown document. Pass it as-is to `--text`. Do not touch the asterisks.
 
-| What you want | Write this | NOT this |
+| What you want | Write this | NOT this (common mistake) |
 |---|---|---|
-| **Bold** | `**text**` | `*text*` (renders as italic) |
+| **Bold** | `**text**` | `*text*` (renders as italic, or disappears) |
 | *Italic* | `*text*` or `_text_` | |
 | ~~Strikethrough~~ | `~text~` | |
+| [Link](url) | `[text](url)` | `<url\|text>` (Slack-native — don't use) |
 
 **Tilde (`~`) as range separator**: Slack interprets two `~` in the same text as strikethrough (e.g. `70~80% ... 20~30%` strikes through everything between them). Use fullwidth tilde `～` (U+FF5E) instead — visually identical, no strikethrough trigger.
 
