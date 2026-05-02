@@ -1,5 +1,6 @@
 import { defineCommand, runMain } from "citty";
 import { slackCommand } from "./platforms/slack/index.ts";
+import { checkForUpdate } from "./lib/update-check.ts";
 import pkg from "../package.json";
 
 const main = defineCommand({
@@ -13,4 +14,5 @@ const main = defineCommand({
   },
 });
 
+await checkForUpdate();
 runMain(main);
