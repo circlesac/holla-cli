@@ -1,16 +1,24 @@
 import { existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { spawn } from "node:child_process";
 import pkg from "../../package.json";
-import { ensureConfigDir, getCacheDir } from "./config.ts";
 
+// ── Per-CLI configuration ──────────────────────────────────────────────────
 const REPO = "circlesac/holla-cli";
-const CACHE_FILE = "update-check.json";
+const CLI_NAME = "holla";
+const NPM_PACKAGE = "@circlesac/holla";
+const BREW_FORMULA = "circlesac/tap/holla";
+// ───────────────────────────────────────────────────────────────────────────
+
+const CACHE_DIR = join(homedir(), ".config", CLI_NAME, "cache");
+const CACHE_FILE = join(CACHE_DIR, "update-check.json");
+const INSTALL_MARKER = `.${CLI_NAME}-install-method`;
+const SKIP_ENV = `${CLI_NAME.toUpperCase()}_NO_UPDATE_CHECK`;
+const REFRESH_ENV = `${CLI_NAME.toUpperCase()}_INTERNAL_REFRESH`;
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 5000;
-const INSTALL_MARKER = ".holla-install-method";
-const REFRESH_ENV = "HOLLA_INTERNAL_REFRESH";
 
 type Source = "homebrew" | "npm" | "standalone" | "unknown";
 
@@ -20,7 +28,7 @@ interface CacheEntry {
 }
 
 function shouldSkip(): boolean {
-  if (process.env.HOLLA_NO_UPDATE_CHECK) return true;
+  if (process.env[SKIP_ENV]) return true;
   if (process.env.CI) return true;
   const v = (pkg as { version?: string }).version;
   if (!v || v === "0.0.0") return true;
@@ -65,9 +73,9 @@ function detectSource(): Source {
 function updateCommand(source: Source): string {
   switch (source) {
     case "homebrew":
-      return "brew upgrade circlesac/tap/holla";
+      return `brew upgrade ${BREW_FORMULA}`;
     case "npm":
-      return "npm update -g @circlesac/holla";
+      return `npm update -g ${NPM_PACKAGE}`;
     case "standalone":
       return `curl -fsSL https://github.com/${REPO}/releases/latest/download/install.sh | sh`;
     case "unknown":
@@ -79,7 +87,7 @@ function printBanner(current: string, latest: string, source: Source): void {
   const url = `https://github.com/${REPO}/releases/tag/${latest}`;
   const lines = [
     "",
-    `🌱 A new version of holla is available:`,
+    `🌱 A new version of ${CLI_NAME} is available:`,
     `   v${stripV(current)} → ${latest}`,
     ``,
     `   Release notes: ${url}`,
@@ -91,7 +99,7 @@ function printBanner(current: string, latest: string, source: Source): void {
 
 async function readCache(): Promise<CacheEntry | null> {
   try {
-    const text = await readFile(join(getCacheDir(), CACHE_FILE), "utf-8");
+    const text = await readFile(CACHE_FILE, "utf-8");
     const parsed = JSON.parse(text) as CacheEntry;
     if (typeof parsed.checkedAt !== "string" || typeof parsed.latest !== "string") {
       return null;
@@ -103,8 +111,8 @@ async function readCache(): Promise<CacheEntry | null> {
 }
 
 async function writeCache(entry: CacheEntry): Promise<void> {
-  await ensureConfigDir();
-  await writeFile(join(getCacheDir(), CACHE_FILE), JSON.stringify(entry));
+  await mkdir(CACHE_DIR, { recursive: true });
+  await writeFile(CACHE_FILE, JSON.stringify(entry));
 }
 
 async function fetchLatestTag(): Promise<string | null> {
@@ -114,7 +122,7 @@ async function fetchLatestTag(): Promise<string | null> {
     const res = await fetch(
       `https://api.github.com/repos/${REPO}/releases/latest`,
       {
-        headers: { "User-Agent": "holla-cli", Accept: "application/vnd.github+json" },
+        headers: { "User-Agent": `${CLI_NAME}-cli`, Accept: "application/vnd.github+json" },
         signal: controller.signal,
       },
     );
@@ -170,11 +178,11 @@ function execUpdate(source: Source): Promise<number> {
     switch (source) {
       case "homebrew":
         cmd = "brew";
-        args = ["upgrade", "circlesac/tap/holla"];
+        args = ["upgrade", BREW_FORMULA];
         break;
       case "npm":
         cmd = "npm";
-        args = ["update", "-g", "@circlesac/holla"];
+        args = ["update", "-g", NPM_PACKAGE];
         break;
       case "standalone":
         cmd = `curl -fsSL https://github.com/${REPO}/releases/latest/download/install.sh | sh`;
