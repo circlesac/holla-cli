@@ -12,11 +12,12 @@ const NPM_PACKAGE = "@circlesac/holla";
 const BREW_FORMULA = "circlesac/tap/holla";
 // ───────────────────────────────────────────────────────────────────────────
 
+const ENV_PREFIX = CLI_NAME.toUpperCase().replace(/-/g, "_");
 const CACHE_DIR = join(homedir(), ".config", CLI_NAME, "cache");
 const CACHE_FILE = join(CACHE_DIR, "update-check.json");
 const INSTALL_MARKER = `.${CLI_NAME}-install-method`;
-const SKIP_ENV = `${CLI_NAME.toUpperCase()}_NO_UPDATE_CHECK`;
-const REFRESH_ENV = `${CLI_NAME.toUpperCase()}_INTERNAL_REFRESH`;
+const SKIP_ENV = `${ENV_PREFIX}_NO_UPDATE_CHECK`;
+const REFRESH_ENV = `${ENV_PREFIX}_INTERNAL_REFRESH`;
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 5000;
 
