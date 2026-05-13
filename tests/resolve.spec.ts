@@ -80,6 +80,16 @@ describe("resolveChannel", () => {
 		expect((client as any).conversations.list).toHaveBeenCalledTimes(2)
 	})
 
+	it("should create cache dir on first save (regression: #28 ENOENT)", async () => {
+		// Simulate fresh install: cache dir does not exist yet
+		await rm(join(tempDir, ".config", "holla", "cache"), { recursive: true })
+
+		const { resolveChannel } = await import("../src/platforms/slack/resolve.ts")
+		const client = mockClient([{ name: "general", id: "C001" }], [])
+		const result = await resolveChannel(client as any, "#general", "ws1")
+		expect(result).toBe("C001")
+	})
+
 	it("should namespace cache by workspace (regression: cross-workspace collision)", async () => {
 		const { resolveChannel } = await import("../src/platforms/slack/resolve.ts")
 		const clientA = mockClient([{ name: "general", id: "C001" }], [])

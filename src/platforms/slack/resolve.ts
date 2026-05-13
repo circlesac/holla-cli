@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { getCacheDir } from "../../lib/config.ts";
 import type { WebClient } from "@slack/web-api";
 import type { CacheEntry } from "../../types/index.ts";
@@ -54,7 +54,9 @@ async function loadCache(workspace: string, key: string): Promise<NameMap | null
 }
 
 async function saveCache(workspace: string, key: string, data: NameMap): Promise<void> {
-  const path = join(getCacheDir(), cacheFileName(workspace, key));
+  const dir = getCacheDir();
+  await mkdir(dir, { recursive: true });
+  const path = join(dir, cacheFileName(workspace, key));
   const entry: CacheEntry<NameMap> = {
     data,
     expiresAt: Date.now() + CACHE_TTL,
