@@ -9,6 +9,13 @@ import {
   rateLimitRetry,
   RateLimitTimeoutError,
 } from "../../../lib/rate-limit.ts";
+import {
+  loadHistoryCache,
+  saveHistoryCache,
+  shouldBypassCache,
+  compareTs,
+  pickNewestTs,
+} from "../../../lib/cache.ts";
 
 export const historyCommand = defineCommand({
   meta: { name: "history", description: "Fetch channel message history" },
@@ -45,6 +52,20 @@ export const historyCommand = defineCommand({
       let cursor: string | undefined = args.cursor;
       let partial = false;
 
+      // Incremental cache only kicks in for `--all` channel history without
+      // explicit time bounds. Threads / bounded queries always hit the API.
+      const useHistoryCache =
+        !args.thread &&
+        Boolean(args.all) &&
+        !args.before &&
+        !args.after &&
+        !args.cursor &&
+        !shouldBypassCache(args as Record<string, unknown>);
+
+      const cachedHistory = useHistoryCache
+        ? await loadHistoryCache(workspace, channelId)
+        : null;
+
       try {
         if (args.thread) {
           do {
@@ -77,6 +98,10 @@ export const historyCommand = defineCommand({
             cursor = result.response_metadata?.next_cursor || undefined;
           } while (args.all && cursor);
         } else {
+          // If we have a cache, fetch only messages newer than the cached newest ts.
+          // Note: edits/deletes on cached messages are not reflected (append-only,
+          // by design — issue #24 trade-off).
+          const oldest = cachedHistory?.newestTs || args.after;
           do {
             const result = await rateLimitRetry(() =>
               client.conversations.history({
@@ -84,7 +109,7 @@ export const historyCommand = defineCommand({
                 ...(limit !== undefined ? { limit } : {}),
                 cursor,
                 latest: args.before,
-                oldest: args.after,
+                oldest,
               }),
             );
 
@@ -123,7 +148,25 @@ export const historyCommand = defineCommand({
         process.exitCode = 1;
       }
 
-      printOutput(messages, getOutputFormat(args), [
+      // Merge cached + fresh, persist, return.
+      // `messages` already came back newest-first from the API; the cached
+      // entries are older, so they go at the end of the timeline.
+      let combined = messages;
+      if (useHistoryCache) {
+        const cachedMessages = cachedHistory?.messages ?? [];
+        combined = [...messages, ...cachedMessages];
+        if (!partial) {
+          const prevNewest = cachedHistory?.newestTs ?? "";
+          const fetchedNewest = pickNewestTs(messages, prevNewest);
+          const newestTs =
+            compareTs(fetchedNewest, prevNewest) >= 0 ? fetchedNewest : prevNewest;
+          if (newestTs) {
+            await saveHistoryCache(workspace, channelId, combined, newestTs);
+          }
+        }
+      }
+
+      printOutput(combined, getOutputFormat(args), [
         { key: "ts", label: "Timestamp" },
         { key: "user", label: "User" },
         { key: "text", label: "Text" },
