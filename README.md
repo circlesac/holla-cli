@@ -25,6 +25,10 @@ holla slack auth login
 
 # Or paste a token directly
 holla slack auth login --token xoxb-...
+
+# Register multiple tokens against the same team with custom aliases
+holla slack auth login --token xoxp-... --name acme_bot
+holla slack auth login --token xoxp-... --name acme_ops
 ```
 
 ## Commands
@@ -32,9 +36,13 @@ holla slack auth login --token xoxb-...
 ### Auth
 
 ```bash
-holla slack auth login        # OAuth login (default) or --token
-holla slack auth logout       # Remove stored credentials
-holla slack auth status       # Show auth status for all workspaces
+holla slack auth login                       # OAuth login (default)
+holla slack auth login --token xoxp-...      # Login with a pasted token
+holla slack auth login --token xoxp-... --name acme_bot
+                                              # ...with a custom alias so multiple tokens
+                                              # can coexist against the same team
+holla slack auth logout                       # Remove stored credentials
+holla slack auth status                       # Show auth status for all workspaces
 ```
 
 ### Channels

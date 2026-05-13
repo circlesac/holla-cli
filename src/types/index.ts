@@ -12,6 +12,8 @@ export interface HollaConfig {
 
 export interface WorkspaceCredentials {
   name: string;
+  teamId?: string;
+  teamName?: string;
   botToken?: string;
   userToken?: string;
   browserToken?: string;

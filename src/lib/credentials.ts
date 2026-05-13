@@ -17,6 +17,7 @@ export async function storeToken(
   workspace: string,
   tokenType: "bot" | "user",
   token: string,
+  identity?: { teamId?: string; teamName?: string },
 ): Promise<void> {
   await ensureCredentialsDir();
   const existing = await getWorkspaceCredentials(workspace);
@@ -27,6 +28,9 @@ export async function storeToken(
   } else {
     creds.userToken = token;
   }
+
+  if (identity?.teamId) creds.teamId = identity.teamId;
+  if (identity?.teamName) creds.teamName = identity.teamName;
 
   await writeFile(credentialPath(workspace), JSON.stringify(creds, null, 2));
 }

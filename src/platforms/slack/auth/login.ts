@@ -12,7 +12,7 @@ const DEFAULT_CLIENT_SECRET = "85212febb6a85d3088045da95297188a";
 const BOT_SCOPES = manifest.oauth_config.scopes.bot.join(",");
 const USER_SCOPES = manifest.oauth_config.scopes.user.join(",");
 
-async function loginWithToken(token: string): Promise<void> {
+async function loginWithToken(token: string, alias?: string): Promise<void> {
   let tokenType: "bot" | "user";
   if (token.startsWith("xoxb-")) {
     tokenType = "bot";
@@ -27,17 +27,19 @@ async function loginWithToken(token: string): Promise<void> {
 
   const client = createSlackClient(token);
   const result = await client.auth.test();
-  const workspace = result.team as string;
-  const teamUrl = result.url as string;
+  const teamName = result.team as string;
+  const teamId = result.team_id as string | undefined;
+  const teamUrl = result.url as string | undefined;
 
-  const workspaceName = teamUrl
+  const derivedName = teamUrl
     ? new URL(teamUrl).hostname.split(".")[0]!
-    : workspace.toLowerCase().replace(/\s+/g, "-");
+    : teamName.toLowerCase().replace(/\s+/g, "-");
+  const workspaceName = alias ?? derivedName;
 
-  await storeToken(workspaceName, tokenType, token);
+  await storeToken(workspaceName, tokenType, token, { teamId, teamName });
 
   console.log(
-    `\x1b[32m✓\x1b[0m Authorized! ${tokenType} token saved for "${workspace}" (${workspaceName})`,
+    `\x1b[32m✓\x1b[0m Authorized! ${tokenType} token saved for "${teamName}" (${workspaceName})`,
   );
 }
 
@@ -48,6 +50,7 @@ function randomPort(): number {
 async function loginWithOAuth(
   clientId: string,
   clientSecret: string,
+  alias?: string,
 ): Promise<void> {
   const port = randomPort();
   const state = btoa(JSON.stringify({ p: port }));
@@ -156,8 +159,8 @@ async function loginWithOAuth(
   const teamName = data.team?.name ?? "unknown";
   const teamId = data.team?.id ?? "";
 
-  // Derive workspace name from team info
-  let workspaceName = teamName.toLowerCase().replace(/\s+/g, "-");
+  // Derive workspace name from team info (unless overridden via --name)
+  let derivedName = teamName.toLowerCase().replace(/\s+/g, "-");
 
   // Try to get the actual subdomain via auth.test
   const botToken = data.access_token;
@@ -167,29 +170,32 @@ async function loginWithOAuth(
       const authResult = await client.auth.test();
       const teamUrl = authResult.url as string | undefined;
       if (teamUrl) {
-        workspaceName = new URL(teamUrl).hostname.split(".")[0]!;
+        derivedName = new URL(teamUrl).hostname.split(".")[0]!;
       }
     } catch {
       // fall back to derived name
     }
   }
 
+  const workspaceName = alias ?? derivedName;
+  const identity = { teamId, teamName };
+
   // Store tokens
   let botSaved = false;
   let userSaved = false;
 
   if (data.access_token) {
-    await storeToken(workspaceName, "bot", data.access_token);
+    await storeToken(workspaceName, "bot", data.access_token, identity);
     botSaved = true;
   }
 
   if (data.authed_user?.access_token) {
-    await storeToken(workspaceName, "user", data.authed_user.access_token);
+    await storeToken(workspaceName, "user", data.authed_user.access_token, identity);
     userSaved = true;
   }
 
   console.log(
-    `\x1b[32m✓\x1b[0m Authorized! Tokens saved for "${teamName}" (${teamId})`,
+    `\x1b[32m✓\x1b[0m Authorized! Tokens saved as "${workspaceName}" for "${teamName}" (${teamId})`,
   );
   console.log(
     `  Bot token:  ${botSaved ? "\x1b[32m✓\x1b[0m" : "\x1b[33m—\x1b[0m not granted"}`,
@@ -206,6 +212,12 @@ export const loginCommand = defineCommand({
       type: "string",
       description: "Slack token (xoxb-... or xoxp-...) for manual auth",
     },
+    name: {
+      type: "string",
+      description:
+        "Custom workspace alias for the credential file (use to register multiple tokens against the same team, e.g. acme_bot vs acme_ops)",
+      alias: "as",
+    },
     "client-id": {
       type: "string",
       description: "Slack app client ID (or set SLACK_CLIENT_ID)",
@@ -218,10 +230,18 @@ export const loginCommand = defineCommand({
   async run({ args }) {
     await ensureConfigDir();
 
+    const alias = args.name?.trim() || undefined;
+    if (alias && !/^[a-zA-Z0-9_-]+$/.test(alias)) {
+      console.error(
+        "\x1b[31m✗\x1b[0m --name must contain only letters, digits, hyphen, or underscore",
+      );
+      process.exit(1);
+    }
+
     // Manual token flow
     if (args.token) {
       try {
-        await loginWithToken(args.token);
+        await loginWithToken(args.token, alias);
       } catch (error) {
         handleError(error);
       }
@@ -235,7 +255,7 @@ export const loginCommand = defineCommand({
       args["client-secret"] ?? process.env["SLACK_CLIENT_SECRET"] ?? DEFAULT_CLIENT_SECRET;
 
     try {
-      await loginWithOAuth(clientId, clientSecret);
+      await loginWithOAuth(clientId, clientSecret, alias);
     } catch (error) {
       handleError(error);
     }

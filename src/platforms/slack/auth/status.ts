@@ -25,7 +25,11 @@ export const statusCommand = defineCommand({
     const results = [];
 
     for (const ws of workspaces) {
-      const entry: Record<string, string> = { workspace: ws.name };
+      const entry: Record<string, string> = {
+        workspace: ws.name,
+        team: ws.teamName ?? "—",
+        team_id: ws.teamId ?? "—",
+      };
 
       if (ws.botToken) {
         try {
@@ -64,6 +68,8 @@ export const statusCommand = defineCommand({
 
     printOutput(results, getOutputFormat(args), [
       { key: "workspace", label: "Workspace" },
+      { key: "team", label: "Team" },
+      { key: "team_id", label: "Team ID" },
       { key: "bot", label: "Bot" },
       { key: "user", label: "User" },
     ]);
