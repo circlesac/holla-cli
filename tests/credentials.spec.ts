@@ -118,4 +118,42 @@ describe("credentials", () => {
 		await storeToken("test-ws", "bot", "xoxb-bot")
 		await expect(getToken("test-ws")).rejects.toThrow("No user token found")
 	})
+
+	it("should persist team identity when provided", async () => {
+		const { storeToken, getWorkspaceCredentials } = await import(
+			"../src/lib/credentials.ts"
+		)
+		await storeToken("acme_bot", "bot", "xoxb-1", {
+			teamId: "T0123",
+			teamName: "Acme",
+		})
+		const creds = await getWorkspaceCredentials("acme_bot")
+		expect(creds!.teamId).toBe("T0123")
+		expect(creds!.teamName).toBe("Acme")
+	})
+
+	it("should support two aliases for the same team (regression: #29)", async () => {
+		const { storeToken, listWorkspaces, getWorkspaceCredentials } = await import(
+			"../src/lib/credentials.ts"
+		)
+		await storeToken("acme_bot", "user", "xoxp-bot-app", {
+			teamId: "T0123",
+			teamName: "Acme",
+		})
+		await storeToken("acme_ops", "user", "xoxp-ops-app", {
+			teamId: "T0123",
+			teamName: "Acme",
+		})
+
+		const list = await listWorkspaces()
+		const names = list.map((w) => w.name).sort()
+		expect(names).toStrictEqual(["acme_bot", "acme_ops"])
+
+		const bot = await getWorkspaceCredentials("acme_bot")
+		const ops = await getWorkspaceCredentials("acme_ops")
+		expect(bot!.userToken).toBe("xoxp-bot-app")
+		expect(ops!.userToken).toBe("xoxp-ops-app")
+		expect(bot!.teamId).toBe("T0123")
+		expect(ops!.teamId).toBe("T0123")
+	})
 })
