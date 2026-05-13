@@ -6,6 +6,10 @@ export const commonArgs = {
   },
   json: { type: "boolean" as const, description: "Output as JSON" },
   plain: { type: "boolean" as const, description: "Output as plain text" },
+  "no-cache": {
+    type: "boolean" as const,
+    description: "Bypass local cache and fetch fresh data",
+  },
 };
 
 export const cursorPaginationArgs = {

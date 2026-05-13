@@ -1,4 +1,9 @@
+import { join } from "node:path"
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import { vi, beforeEach } from "vitest"
+
+let tempDir: string
 
 // --- mocks ---
 
@@ -35,14 +40,19 @@ vi.mock("../src/platforms/slack/resolve.ts", () => ({
 	resolveUser: vi.fn().mockResolvedValue("U001"),
 }))
 
-beforeEach(() => {
+beforeEach(async () => {
 	vi.clearAllMocks()
 	vi.spyOn(console, "log").mockImplementation(() => {})
 	vi.spyOn(console, "error").mockImplementation(() => {})
+	// Isolate cache writes per test so the shared cache file doesn't leak across runs.
+	tempDir = await mkdtemp(join(tmpdir(), "holla-pagination-test-"))
+	vi.stubEnv("HOME", tempDir)
 })
 
-afterEach(() => {
+afterEach(async () => {
 	vi.restoreAllMocks()
+	vi.unstubAllEnvs()
+	await rm(tempDir, { recursive: true, force: true })
 })
 
 // ──────────────────────────────────────────────
@@ -178,6 +188,50 @@ describe("channels history", () => {
 		await run({ before: "1700000000.000000" })
 		expect(mockConversationsHistory).toHaveBeenCalledWith(
 			expect.objectContaining({ latest: "1700000000.000000" }),
+		)
+	})
+
+	it("--all with cache: fetches only newer than the cached newestTs and appends (#24)", async () => {
+		// First run: populate cache
+		mockConversationsHistory.mockResolvedValueOnce({
+			messages: [
+				{ ts: "100.0", user: "U1", text: "old1" },
+				{ ts: "50.0", user: "U1", text: "old0" },
+			],
+			response_metadata: { next_cursor: "" },
+		})
+		await run({ all: true })
+
+		// Second run: should pass oldest=100.0 to fetch only newer
+		mockConversationsHistory.mockResolvedValueOnce({
+			messages: [{ ts: "200.0", user: "U2", text: "new1" }],
+			response_metadata: { next_cursor: "" },
+		})
+		await run({ all: true, json: true })
+
+		expect(mockConversationsHistory).toHaveBeenNthCalledWith(2,
+			expect.objectContaining({ oldest: "100.0" }),
+		)
+		const output = (console.log as any).mock.calls.at(-1)[0]
+		const parsed = JSON.parse(output)
+		expect(parsed.map((m: { ts: string }) => m.ts)).toEqual(["200.0", "100.0", "50.0"])
+	})
+
+	it("--all with --no-cache: ignores cache and refetches everything (#24)", async () => {
+		mockConversationsHistory.mockResolvedValueOnce({
+			messages: [{ ts: "100.0", user: "U1", text: "first" }],
+			response_metadata: { next_cursor: "" },
+		})
+		await run({ all: true })
+
+		mockConversationsHistory.mockResolvedValueOnce({
+			messages: [{ ts: "300.0", user: "U2", text: "new" }],
+			response_metadata: { next_cursor: "" },
+		})
+		await run({ all: true, "no-cache": true })
+
+		expect(mockConversationsHistory).toHaveBeenNthCalledWith(2,
+			expect.not.objectContaining({ oldest: expect.anything() }),
 		)
 	})
 })

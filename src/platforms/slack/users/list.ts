@@ -4,6 +4,8 @@ import { createSlackClient } from "../client.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs } from "../../../lib/args.ts";
+import { shouldBypassCache } from "../../../lib/cache.ts";
+import { fetchAllUsers } from "../lists.ts";
 
 export const listCommand = defineCommand({
   meta: { name: "list", description: "List users" },
@@ -20,31 +22,41 @@ export const listCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const { token } = await getToken(args.workspace);
+      const { token, workspace } = await getToken(args.workspace);
       const client = createSlackClient(token);
 
-      const limit = args.limit ? parseInt(args.limit as string, 10) : 1000;
+      const customPagination = Boolean(args.cursor) || Boolean(args.limit);
       const users: Record<string, unknown>[] = [];
-      let cursor: string | undefined = args.cursor;
 
-      do {
-        const result = await client.users.list({
-          limit,
-          cursor,
+      if (!customPagination) {
+        const records = await fetchAllUsers(client, workspace, {
+          bypass: shouldBypassCache(args as Record<string, unknown>),
         });
-
-        for (const user of result.members ?? []) {
+        for (const r of records) {
           users.push({
-            id: user.id ?? "",
-            name: user.name ?? "",
-            real_name: user.real_name ?? "",
-            display_name:
-              (user.profile as { display_name?: string })?.display_name ?? "",
+            id: r.id,
+            name: r.name,
+            real_name: r.real_name ?? "",
+            display_name: r.display_name ?? "",
           });
         }
-
-        cursor = result.response_metadata?.next_cursor || undefined;
-      } while (cursor);
+      } else {
+        const limit = args.limit ? parseInt(args.limit as string, 10) : 1000;
+        let cursor: string | undefined = args.cursor;
+        do {
+          const result = await client.users.list({ limit, cursor });
+          for (const user of result.members ?? []) {
+            users.push({
+              id: user.id ?? "",
+              name: user.name ?? "",
+              real_name: user.real_name ?? "",
+              display_name:
+                (user.profile as { display_name?: string })?.display_name ?? "",
+            });
+          }
+          cursor = result.response_metadata?.next_cursor || undefined;
+        } while (cursor);
+      }
 
       printOutput(users, getOutputFormat(args), [
         { key: "id", label: "ID" },

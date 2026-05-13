@@ -25,8 +25,3 @@ export interface ResolvedEntity {
   name: string;
   resolvedAt: number;
 }
-
-export interface CacheEntry<T> {
-  data: T;
-  expiresAt: number;
-}
