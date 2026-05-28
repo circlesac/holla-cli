@@ -1,13 +1,13 @@
 import { defineCommand } from "citty";
 import { markdownToBlocks } from "@circlesac/mack";
-import { getToken } from "../../../lib/credentials.ts";
+import { getToken, getBotUserId } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText, validateTableBlocks } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, attributionArgs } from "../../../lib/args.ts";
-import { getAttributionConfig, applySuffix, addAttributionReaction } from "../../../lib/attribution.ts";
+import { getAttributionConfig, applySuffix, addAttributionReaction, buildFooterBlock } from "../../../lib/attribution.ts";
 
 export const replyCommand = defineCommand({
   meta: { name: "reply", description: "Reply to a thread" },
@@ -68,6 +68,11 @@ export const replyCommand = defineCommand({
       }
       const blocks = await markdownToBlocks(text);
       validateTableBlocks(blocks);
+      if (attribution.footer) {
+        const botUserId = await getBotUserId(workspace);
+        const bot = botUserId ? `<@${botUserId}>` : "holla";
+        blocks.push(buildFooterBlock(attribution.footer, { agent: attribution.agent, bot }));
+      }
       const reply_broadcast = args.broadcast ? true : undefined;
       const result = await client.chat.postMessage({ channel, text, blocks, thread_ts, reply_broadcast });
 

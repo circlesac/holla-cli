@@ -134,6 +134,29 @@ export async function getBrowserCredentials(
   return { browserToken: creds.browserToken, browserCookie: creds.browserCookie, workspace: creds.name };
 }
 
+/**
+ * Resolves the holla bot's user ID for a workspace (for mention-based
+ * attribution). Cached in the credential file; resolved once via the bot
+ * token's auth.test. Returns null if there's no bot token.
+ */
+export async function getBotUserId(workspace: string): Promise<string | null> {
+  const creds = await getWorkspaceCredentials(workspace);
+  if (!creds) return null;
+  if (creds.botUserId) return creds.botUserId;
+  if (!creds.botToken) return null;
+  try {
+    const { createSlackClient } = await import("../platforms/slack/client.ts");
+    const result = await createSlackClient(creds.botToken).auth.test();
+    const userId = result.user_id as string | undefined;
+    if (userId) {
+      creds.botUserId = userId;
+      await writeFile(credentialPath(workspace), JSON.stringify(creds, null, 2));
+      return userId;
+    }
+  } catch {}
+  return null;
+}
+
 export async function getToken(
   workspace: string | undefined,
 ): Promise<{ token: string; workspace: string }> {

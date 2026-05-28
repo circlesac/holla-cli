@@ -6,6 +6,7 @@ export interface HollaConfig {
     attribution?: {
       reaction?: string | false;
       suffix?: string | false;
+      footer?: string | false;
     };
   };
 }
@@ -15,6 +16,7 @@ export interface WorkspaceCredentials {
   teamId?: string;
   teamName?: string;
   botToken?: string;
+  botUserId?: string;
   userToken?: string;
   browserToken?: string;
   browserCookie?: string;

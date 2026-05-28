@@ -1,6 +1,9 @@
 import { execSync } from "node:child_process";
 import { readConfig } from "./config.ts";
 import type { WebClient } from "@slack/web-api";
+import type { ContextBlock } from "@slack/types";
+
+const DEFAULT_FOOTER = "Sent via {bot}";
 
 export function detectAgent(override?: string): string {
   if (override) return override;
@@ -18,6 +21,11 @@ export function applySuffix(text: string, agent: string, template: string): stri
   return `${text}\n${suffix}`;
 }
 
+export function buildFooterBlock(template: string, vars: { agent: string; bot: string }): ContextBlock {
+  const text = template.replace(/\{agent\}/g, vars.agent).replace(/\{bot\}/g, vars.bot);
+  return { type: "context", elements: [{ type: "mrkdwn", text }] };
+}
+
 export async function addAttributionReaction(
   client: WebClient,
   channel: string,
@@ -32,6 +40,7 @@ export async function addAttributionReaction(
 interface AttributionConfig {
   reaction: string | false;
   suffix: string | false;
+  footer: string | false;
   agent: string;
 }
 
@@ -48,15 +57,17 @@ export async function getAttributionConfig(args: AttributionArgs): Promise<Attri
 
   let reaction: string | false = attr?.reaction !== undefined ? attr.reaction : false;
   let suffix: string | false = attr?.suffix !== undefined ? attr.suffix : false;
+  let footer: string | false = attr?.footer !== undefined ? attr.footer : DEFAULT_FOOTER;
 
   if (args.attribution === false) {
     reaction = false;
     suffix = false;
+    footer = false;
   } else {
     if (args.reaction === false) reaction = false;
     if (args.suffix === false) suffix = false;
   }
 
   const agent = detectAgent(args.agent);
-  return { reaction, suffix, agent };
+  return { reaction, suffix, footer, agent };
 }

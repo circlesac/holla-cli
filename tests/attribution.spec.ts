@@ -96,10 +96,19 @@ describe("getAttributionConfig", () => {
 		process.env = originalEnv
 	})
 
-	it("should return defaults (reaction off, suffix off)", async () => {
+	it("should return defaults (reaction off, suffix off, footer on)", async () => {
 		const result = await getAttributionConfig({})
 		expect(result.reaction).toBe(false)
 		expect(result.suffix).toBe(false)
+		expect(result.footer).toBe("Sent via {bot}")
+	})
+
+	it("should respect config disabling footer", async () => {
+		mockReadConfig.mockResolvedValueOnce({
+			slack: { attribution: { footer: false } },
+		})
+		const result = await getAttributionConfig({})
+		expect(result.footer).toBe(false)
 	})
 
 	it("should respect config reaction", async () => {
@@ -126,13 +135,14 @@ describe("getAttributionConfig", () => {
 		expect(result.reaction).toBe(false)
 	})
 
-	it("should disable both with --no-attribution", async () => {
+	it("should disable all with --no-attribution", async () => {
 		mockReadConfig.mockResolvedValueOnce({
 			slack: { attribution: { reaction: "robot_face", suffix: "_sent via {agent}_" } },
 		})
 		const result = await getAttributionConfig({ attribution: false })
 		expect(result.reaction).toBe(false)
 		expect(result.suffix).toBe(false)
+		expect(result.footer).toBe(false)
 	})
 
 	it("should disable only reaction with --no-reaction", async () => {
