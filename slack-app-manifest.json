@@ -1,8 +1,9 @@
 {
   "display_information": {
     "name": "holla",
-    "description": "CLI tool for interacting with Slack",
-    "background_color": "#000000"
+    "description": "CLI for interacting with Slack from your terminal",
+    "background_color": "#000000",
+    "long_description": "holla lets you interact with Slack from your terminal — send and reply to messages, manage canvases, search, react, set reminders, and more, acting as you. Free and open source. Source and docs: https://github.com/circlesac/holla-cli"
   },
   "features": {
     "bot_user": {
