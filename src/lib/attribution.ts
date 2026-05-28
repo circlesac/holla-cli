@@ -2,8 +2,6 @@ import { execSync } from "node:child_process";
 import { readConfig } from "./config.ts";
 import type { WebClient } from "@slack/web-api";
 
-const DEFAULT_REACTION = "robot_face";
-
 export function detectAgent(override?: string): string {
   if (override) return override;
   if (process.env.CLAUDECODE === "1") return "claude";
@@ -48,7 +46,7 @@ export async function getAttributionConfig(args: AttributionArgs): Promise<Attri
   const config = await readConfig();
   const attr = config.slack?.attribution;
 
-  let reaction: string | false = attr?.reaction !== undefined ? attr.reaction : DEFAULT_REACTION;
+  let reaction: string | false = attr?.reaction !== undefined ? attr.reaction : false;
   let suffix: string | false = attr?.suffix !== undefined ? attr.suffix : false;
 
   if (args.attribution === false) {

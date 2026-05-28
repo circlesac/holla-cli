@@ -96,9 +96,9 @@ describe("getAttributionConfig", () => {
 		process.env = originalEnv
 	})
 
-	it("should return defaults (reaction on, suffix off)", async () => {
+	it("should return defaults (reaction off, suffix off)", async () => {
 		const result = await getAttributionConfig({})
-		expect(result.reaction).toBe("robot_face")
+		expect(result.reaction).toBe(false)
 		expect(result.suffix).toBe(false)
 	})
 
