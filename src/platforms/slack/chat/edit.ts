@@ -1,13 +1,13 @@
 import { defineCommand } from "citty";
 import { markdownToBlocks } from "@circlesac/mack";
-import { getToken } from "../../../lib/credentials.ts";
+import { getToken, getBotUserId } from "../../../lib/credentials.ts";
 import { createSlackClient } from "../client.ts";
 import { resolveChannel } from "../resolve.ts";
 import { normalizeSlackText, validateTableBlocks } from "../text.ts";
 import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, attributionArgs } from "../../../lib/args.ts";
-import { getAttributionConfig, addAttributionReaction } from "../../../lib/attribution.ts";
+import { getAttributionConfig, addAttributionReaction, buildFooterBlock } from "../../../lib/attribution.ts";
 
 export const editCommand = defineCommand({
   meta: { name: "edit", description: "Edit an existing message" },
@@ -48,8 +48,16 @@ export const editCommand = defineCommand({
       }
 
       text = normalizeSlackText(text);
+      const attribution = await getAttributionConfig(args);
       const blocks = await markdownToBlocks(text);
       validateTableBlocks(blocks);
+      // Note: suffix is intentionally NOT re-applied on edit (would mutate body text).
+      // The footer context block IS re-added so attribution survives chat.update.
+      if (attribution.footer) {
+        const botUserId = await getBotUserId(workspace);
+        const bot = botUserId ? `<@${botUserId}>` : "holla";
+        blocks.push(buildFooterBlock(attribution.footer, { agent: attribution.agent, bot }));
+      }
       const result = await client.chat.update({
         channel,
         ts: args.ts,
@@ -57,7 +65,6 @@ export const editCommand = defineCommand({
         blocks,
       });
 
-      const attribution = await getAttributionConfig(args);
       if (attribution.reaction && result.ts && result.channel) {
         await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
       }

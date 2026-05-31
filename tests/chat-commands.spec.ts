@@ -9,7 +9,9 @@ const mockScheduleMessage = vi.fn().mockResolvedValue({
 	ok: true,
 })
 const mockReactionsAdd = vi.fn().mockResolvedValue({ ok: true })
-const mockMarkdownToBlocks = vi.fn().mockResolvedValue([{ type: "section" }])
+// Return a fresh array each call: commands push attribution blocks onto the
+// result, and a shared reference would leak mutations across tests.
+const mockMarkdownToBlocks = vi.fn(async () => [{ type: "section" }] as Array<Record<string, unknown>>)
 const mockGetAttributionConfig = vi.fn().mockResolvedValue({
 	reaction: "robot_face",
 	suffix: false,
@@ -18,6 +20,7 @@ const mockGetAttributionConfig = vi.fn().mockResolvedValue({
 
 vi.mock("../src/lib/credentials.ts", () => ({
 	getToken: vi.fn().mockResolvedValue({ token: "xoxp-test", workspace: "test-ws" }),
+	getBotUserId: vi.fn().mockResolvedValue("U0BOT"),
 }))
 
 vi.mock("../src/platforms/slack/client.ts", () => ({
@@ -42,6 +45,10 @@ vi.mock("../src/lib/attribution.ts", () => ({
 	addAttributionReaction: vi.fn(async (client: any, channel: string, ts: string, emoji: string) => {
 		await client.reactions.add({ channel, timestamp: ts, name: emoji })
 	}),
+	buildFooterBlock: vi.fn((template: string, vars: { agent: string; bot: string }) => ({
+		type: "context",
+		elements: [{ type: "mrkdwn", text: template.replace(/\{agent\}/g, vars.agent).replace(/\{bot\}/g, vars.bot) }],
+	})),
 }))
 
 vi.mock("../src/platforms/slack/resolve.ts", () => ({
@@ -214,6 +221,23 @@ describe("edit command", () => {
 		await runEdit({ text: "updated" })
 		expect(mockUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({ text: "updated" }),
+		)
+	})
+
+	it("should re-add footer block so attribution survives edits", async () => {
+		mockGetAttributionConfig.mockResolvedValueOnce({
+			reaction: false,
+			suffix: false,
+			footer: "Sent via {bot}",
+			agent: "holla",
+		})
+		await runEdit({ text: "updated" })
+		expect(mockUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				blocks: expect.arrayContaining([
+					expect.objectContaining({ type: "context" }),
+				]),
+			}),
 		)
 	})
 })
