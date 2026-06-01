@@ -26,11 +26,15 @@ export function validateTableBlocks(blocks: (KnownBlock | TableBlock | RichTextB
  * 1. Fixes zsh history expansion: `<\!here>` → `<!here>`
  * 2. Converts Slack mrkdwn links to standard markdown: `<url|text>` → `[text](url)`
  *    (Only matches http/https URLs — user/channel mentions are preserved.)
+ * 3. Strips the fallback label from Slack mention tokens so markdownToBlocks
+ *    recognizes them as mentions (mack only parses the bare form):
+ *    `<!subteam^ID|@handle>` → `<!subteam^ID>`, `<@U…|name>` → `<@U…>`, `<#C…|name>` → `<#C…>`
  */
 export function normalizeSlackText(text: string): string {
   return text
     .replace(/<\\!/g, "<!")
-    .replace(/<(https?:\/\/[^|>]+)\|([^>]+)>/g, "[$2]($1)");
+    .replace(/<(https?:\/\/[^|>]+)\|([^>]+)>/g, "[$2]($1)")
+    .replace(/<(!subteam\^[A-Z0-9]+|!(?:here|channel|everyone)|[@#][A-Z0-9]+)\|[^>]*>/g, "<$1>");
 }
 
 /**

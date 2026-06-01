@@ -68,6 +68,30 @@ describe("normalizeSlackText", () => {
 			"[Example](http://example.com)",
 		)
 	})
+
+	it("should strip fallback label from usergroup mention", () => {
+		expect(normalizeSlackText("<!subteam^S04HD54QKMG|@smarthome_dev>")).toBe(
+			"<!subteam^S04HD54QKMG>",
+		)
+	})
+
+	it("should strip fallback label from user mention", () => {
+		expect(normalizeSlackText("<@U01234567|yg>")).toBe("<@U01234567>")
+	})
+
+	it("should strip fallback label from channel mention", () => {
+		expect(normalizeSlackText("<#C01234567|general>")).toBe("<#C01234567>")
+	})
+
+	it("should leave bare usergroup mention unchanged", () => {
+		expect(normalizeSlackText("<!subteam^S04HD54QKMG>")).toBe("<!subteam^S04HD54QKMG>")
+	})
+
+	it("should still convert URL link when usergroup mention present", () => {
+		expect(normalizeSlackText("<!subteam^S04HD54QKMG|@dev> see <https://x.com|here>")).toBe(
+			"<!subteam^S04HD54QKMG> see [here](https://x.com)",
+		)
+	})
 })
 
 describe("validateTableBlocks", () => {
