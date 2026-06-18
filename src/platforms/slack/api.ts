@@ -119,3 +119,6 @@ export const apiCommand = defineCommand({
     }
   },
 });
+
+// raw passthrough — 임의 `--key value` 를 Slack API 로 그대로 전달하므로 unknown-flag 검증 제외(validate-flags 가 읽음).
+(apiCommand as { allowUnknownArgs?: boolean }).allowUnknownArgs = true;
