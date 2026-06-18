@@ -9,6 +9,7 @@ const mockScheduleMessage = vi.fn().mockResolvedValue({
 	ok: true,
 })
 const mockReactionsAdd = vi.fn().mockResolvedValue({ ok: true })
+const mockGetPermalink = vi.fn().mockResolvedValue({ permalink: "https://x.slack.com/archives/C001/p123456", ok: true })
 // Return a fresh array each call: commands push attribution blocks onto the
 // result, and a shared reference would leak mutations across tests.
 const mockMarkdownToBlocks = vi.fn(async () => [{ type: "section" }] as Array<Record<string, unknown>>)
@@ -30,6 +31,7 @@ vi.mock("../src/platforms/slack/client.ts", () => ({
 			update: mockUpdate,
 			postEphemeral: mockPostEphemeral,
 			scheduleMessage: mockScheduleMessage,
+			getPermalink: mockGetPermalink,
 		},
 		reactions: {
 			add: mockReactionsAdd,
@@ -121,6 +123,24 @@ describe("send command", () => {
 			expect.objectContaining({ text: "hello\n_sent via claude_" }),
 		)
 	})
+
+		it("should fetch a permalink for the sent message", async () => {
+			await runSend({ text: "hello" })
+			expect(mockGetPermalink).toHaveBeenCalledWith({ channel: "C001", message_ts: "123.456" })
+		})
+
+		it("should include permalink in JSON output", async () => {
+			const log = vi.spyOn(console, "log").mockImplementation(() => {})
+			await runSend({ text: "hello", json: true })
+			const out = JSON.parse(log.mock.calls.map((c: any) => c[0]).join(""))
+			expect(out.permalink).toBe("https://x.slack.com/archives/C001/p123456")
+		})
+
+		it("should still send when permalink fetch fails", async () => {
+			mockGetPermalink.mockRejectedValueOnce(new Error("rate limited"))
+			await expect(runSend({ text: "hello" })).resolves.toBeUndefined()
+			expect(mockPostMessage).toHaveBeenCalled()
+		})
 })
 
 describe("--message alias for --text", () => {
@@ -177,6 +197,18 @@ describe("reply command", () => {
 		expect(mockPostMessage).toHaveBeenCalledWith(
 			expect.not.objectContaining({ reply_broadcast: true }),
 		)
+	})
+
+	it("should include permalink with thread_ts in JSON output", async () => {
+		mockGetPermalink.mockResolvedValueOnce({
+			permalink: "https://x.slack.com/archives/C001/p123456?thread_ts=1234567890.123456&cid=C001",
+			ok: true,
+		})
+		const log = vi.spyOn(console, "log").mockImplementation(() => {})
+		await runReply({ text: "hi", thread: "1234567890.123456", json: true })
+		expect(mockGetPermalink).toHaveBeenCalledWith({ channel: "C001", message_ts: "123.456" })
+		const out = JSON.parse(log.mock.calls.map((c: any) => c[0]).join(""))
+		expect(out.permalink).toContain("thread_ts=1234567890.123456")
 	})
 })
 

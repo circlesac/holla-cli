@@ -8,6 +8,7 @@ import { printOutput, getOutputFormat } from "../../../lib/output.ts";
 import { handleError } from "../../../lib/errors.ts";
 import { commonArgs, attributionArgs } from "../../../lib/args.ts";
 import { getAttributionConfig, applySuffix, addAttributionReaction, buildFooterBlock } from "../../../lib/attribution.ts";
+import { fetchPermalink } from "./permalink.ts";
 
 export const sendCommand = defineCommand({
   meta: { name: "send", description: "Send a message to a channel" },
@@ -69,14 +70,18 @@ export const sendCommand = defineCommand({
         await addAttributionReaction(client, result.channel, result.ts, attribution.reaction);
       }
 
+      const permalink = result.ts && result.channel ? await fetchPermalink(client, result.channel, result.ts) : undefined;
+
       const format = getOutputFormat(args);
       const msg = result.message as Record<string, unknown> | undefined;
       if (format === "json") {
         const data: Record<string, unknown> = { ts: result.ts, channel: result.channel, text: msg?.text ?? text };
         if (thread_ts) data.thread_ts = (msg?.thread_ts as string) ?? thread_ts;
+        if (permalink) data.permalink = permalink;
         printOutput(data, format);
       } else {
         console.log(`\x1b[32m✓\x1b[0m Message sent (ts: ${result.ts})`);
+        if (permalink) console.log(`  ${permalink}`);
         if (msg?.text) console.log(`\n  ${String(msg.text).replace(/\n/g, "\n  ")}`);
       }
     } catch (error) {
