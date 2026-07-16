@@ -5,7 +5,7 @@
     "": {
       "name": "holla-cli",
       "dependencies": {
-        "@circlesac/mack": "^26.7.2",
+        "@circlesac/mack": "^26.7.3",
         "@slack/web-api": "^7.13.0",
         "citty": "^0.2.0",
         "snappyjs": "^0.7.0",
@@ -34,7 +34,7 @@
 
     "@bcoe/v8-coverage": ["@bcoe/v8-coverage@1.0.2", "", {}, "sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA=="],
 
-    "@circlesac/mack": ["@circlesac/mack@26.7.2", "", { "dependencies": { "@slack/types": "^2.1.0", "fast-xml-parser": "^4.0.6", "marked": "^4.0.12" } }, "sha512-P1Qme8rESfHzBQvX7bFGlfYctHwdtaFfEy5kbK3L1xoV0SQLRgU8+TU2ErxoHQ314fDTQXLPUJVIva+oXdM/dA=="],
+    "@circlesac/mack": ["@circlesac/mack@26.7.3", "", { "dependencies": { "@slack/types": "^2.1.0", "fast-xml-parser": "^4.0.6", "marked": "^4.0.12" } }, "sha512-9Bh0kh3hsvut1FTRBlmMib8bPnIfVgNffwawmh+FDymSChs1Tkjw3+nBe0MyypHtcKlkrjh1X8hj/DcVHxLiKg=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 
