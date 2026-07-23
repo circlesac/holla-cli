@@ -1,46 +1,46 @@
 {
-  "bin": {
-    "holla": "bin/holla"
-  },
-  "dependencies": {
-    "@circlesac/mack": "^26.7.3",
-    "@slack/web-api": "^7.13.0",
-    "citty": "^0.2.0",
-    "snappyjs": "^0.7.0",
-    "turndown": "^7.2.2",
-    "turndown-plugin-gfm": "^1.0.2"
-  },
-  "description": "CLI tool that acts as you on messaging platforms",
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/turndown": "^5.0.6",
-    "@vitest/coverage-v8": "^4.0.18",
-    "vitest": "^4.0.18"
-  },
-  "files": [
-    "bin",
-    "skills"
-  ],
-  "license": "MIT",
-  "module": "src/index.ts",
-  "name": "@circlesac/holla",
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "pi": {
-    "skills": [
-      "./skills"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/circlesac/holla-cli"
-  },
-  "scripts": {
-    "build": "bun build --compile --outfile=dist/holla src/index.ts",
-    "dev": "bun run src/index.ts",
-    "postinstall": "node bin/install.js",
-    "test": "vitest run"
-  },
-  "type": "module"
+	"bin": {
+		"holla": "bin/holla"
+	},
+	"dependencies": {
+		"@circlesac/mack": "^26.7.4",
+		"@slack/web-api": "^7.13.0",
+		"citty": "^0.2.0",
+		"snappyjs": "^0.7.0",
+		"turndown": "^7.2.2",
+		"turndown-plugin-gfm": "^1.0.2"
+	},
+	"description": "CLI tool that acts as you on messaging platforms",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/turndown": "^5.0.6",
+		"@vitest/coverage-v8": "^4.0.18",
+		"vitest": "^4.0.18"
+	},
+	"files": [
+		"bin",
+		"skills"
+	],
+	"license": "MIT",
+	"module": "src/index.ts",
+	"name": "@circlesac/holla",
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"pi": {
+		"skills": [
+			"./skills"
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/circlesac/holla-cli"
+	},
+	"scripts": {
+		"build": "bun build --compile --outfile=dist/holla src/index.ts",
+		"dev": "bun run src/index.ts",
+		"postinstall": "node bin/install.js",
+		"test": "vitest run"
+	},
+	"type": "module"
 }
