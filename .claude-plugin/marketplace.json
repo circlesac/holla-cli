@@ -5,7 +5,7 @@
     {
       "name": "holla",
       "source": "./",
-      "description": "Interact with Slack as yourself — send messages, read threads, search, and create canvases via holla CLI"
+      "description": "Operate holla across messaging providers, with Slack commands, gotchas, and verification"
     }
   ]
 }

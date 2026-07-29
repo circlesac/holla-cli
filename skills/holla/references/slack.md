@@ -1,10 +1,14 @@
----
-name: slack
-description: Use holla CLI to interact with Slack — send messages, read threads, search, manage canvases, and more
-user-invocable: true
----
+# Slack provider
 
-holla is a CLI tool that lets you interact with Slack as yourself (using your user token). All commands require `--workspace <name>` (or `-w`).
+Use holla to interact with Slack as yourself using a user token. All commands require `--workspace <name>` (or `-w`).
+
+## Contents
+
+- Prerequisites and authentication
+- Sending, mentioning, reading, and searching messages
+- Canvases, channels, and other commands
+- Output and name resolution
+- Required post-action verification
 
 ## Prerequisites
 
