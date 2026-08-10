@@ -2,6 +2,9 @@
   "name": "holla-oauth-redirect",
   "main": "src/index.js",
   "compatibility_date": "2025-01-01",
+  "observability": {
+    "traces": { "enabled": true, "persist": true, "head_sampling_rate": 1 }
+  },
   "routes": [
     {
       "pattern": "holla.circles.ac",
