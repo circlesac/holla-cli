@@ -6,6 +6,7 @@ Use holla to interact with Slack as yourself using a user token. All commands re
 
 - Prerequisites and authentication
 - Sending, mentioning, reading, and searching messages
+- Slack Lists
 - Canvases, channels, and other commands
 - Output and name resolution
 - Required post-action verification
@@ -156,6 +157,33 @@ Operations: `insert_at_start`, `insert_at_end`, `insert_before`, `insert_after`,
 **Important**: Section IDs change after each edit. Always look up fresh IDs with `sections` before editing. The `--contains` filter requires at least one search term.
 
 **Canvas markdown limitations**: The Slack Canvas API does not support bullet sub-items under numbered lists (e.g. `1. item` → `- sub`). This causes `canvas_creation_failed`. The CLI auto-converts these to numbered sub-items (with a warning), but when writing markdown for canvases, prefer consistent nesting: bullets under bullets, or numbers under numbers.
+
+## Slack Lists
+
+Slack Lists commands use the `slackLists.*` API and require `lists:read` for reads and
+`lists:write` for create/update/delete actions. Re-authenticate after adding these scopes to
+the Slack app. The `--list` argument accepts either a List ID or a full Slack List URL.
+
+```bash
+# Read rows (use --all for cursor pagination)
+holla slack lists read --list F123456789 -w <ws> --json
+holla slack lists read --list "https://workspace.slack.com/lists/T123/F123" --all -w <ws>
+
+# Inspect the List schema and metadata
+holla slack lists info --list F123456789 -w <ws> --json
+
+# Create a List
+holla slack lists create --name "Publication Schedule" -w <ws>
+
+# Add a row; text cells use Slack rich-text blocks
+holla slack lists add --list F123456789 --fields '[{"column_id":"Col123","rich_text":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"New topic"}]}]}]}' -w <ws>
+
+# Update cells in a row
+holla slack lists update --list F123456789 --row Rec123456 --fields '[{"column_id":"Col456","select":["Opt123"]}]' -w <ws>
+
+# Delete one row (Slack has no whole-List delete API)
+holla slack lists delete --list F123456789 --row Rec123456 -w <ws>
+```
 
 ## Channels
 

@@ -3,19 +3,20 @@
 		"holla": "bin/holla"
 	},
 	"dependencies": {
-		"@circlesac/mack": "^26.7.5",
-		"@slack/web-api": "^7.13.0",
-		"citty": "^0.2.0",
+		"@circlesac/mack": "^26.7.6",
+		"@slack/web-api": "^7.19.0",
+		"citty": "^0.2.2",
 		"snappyjs": "^0.7.0",
-		"turndown": "^7.2.2",
+		"turndown": "^7.2.4",
 		"turndown-plugin-gfm": "^1.0.2"
 	},
 	"description": "CLI tool that acts as you on messaging platforms",
 	"devDependencies": {
-		"@types/bun": "latest",
+		"@types/bun": "^1.4.4",
 		"@types/turndown": "^5.0.6",
-		"@vitest/coverage-v8": "^4.0.18",
-		"vitest": "^4.0.18"
+		"@vitest/coverage-v8": "^4.1.12",
+		"vitest": "^4.1.12",
+		"typescript": "^5.9.3"
 	},
 	"files": [
 		"bin",
@@ -25,7 +26,7 @@
 	"module": "src/index.ts",
 	"name": "@circlesac/holla",
 	"peerDependencies": {
-		"typescript": "^5"
+		"typescript": "^5.9.3"
 	},
 	"pi": {
 		"skills": [

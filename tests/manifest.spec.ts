@@ -78,6 +78,12 @@ describe("slack-app-manifest.json scopes", () => {
 		expect(userScopes).toContain("search:read")
 	})
 
+	it("should have user scopes for Slack Lists", () => {
+		for (const s of ["lists:read", "lists:write"]) {
+			expect(userScopes).toContain(s)
+		}
+	})
+
 	it("should have user scope for team info", () => {
 		expect(userScopes).toContain("team:read")
 	})

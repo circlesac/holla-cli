@@ -39,6 +39,8 @@
         "im:history",
         "im:read",
         "im:write",
+        "lists:read",
+        "lists:write",
         "mpim:history",
         "mpim:read",
         "mpim:write",
