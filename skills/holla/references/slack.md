@@ -17,6 +17,11 @@ Authenticate first: `holla slack auth login --workspace <name>`
 
 Check status: `holla slack auth whoami --workspace <name>`
 
+Tokens and browser session credentials are encrypted at rest. holla keeps the local AES-256-GCM
+key at `~/.config/holla/.encryption_key` with mode `0600` and workspace records at
+`~/.config/holla/credentials/*.json` with mode `0600`. The key is loaded automatically; no
+password prompt is expected. Legacy plaintext records migrate automatically when read.
+
 ## Sending messages
 
 ```bash

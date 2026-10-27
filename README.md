@@ -45,6 +45,16 @@ holla slack auth logout                       # Remove stored credentials
 holla slack auth status                       # Show auth status for all workspaces
 ```
 
+### Credential storage
+
+Slack tokens and browser session credentials are encrypted at rest with AES-256-GCM. holla
+creates a random 32-byte key at `~/.config/holla/.encryption_key` with mode `0600`, and stores
+encrypted workspace records under `~/.config/holla/credentials` with mode `0600`. The key is
+read automatically on each run, so no password prompt is needed. Existing plaintext records
+are encrypted automatically the next time holla reads them. This protects against casual file
+disclosure; a local process that can read both the key and credential directory can still
+decrypt the tokens.
+
 ### Channels
 
 ```bash
