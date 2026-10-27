@@ -1,5 +1,5 @@
 import { join } from "node:path"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdtemp, readFile, rm, stat, writeFile, mkdir } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { vi, beforeEach, afterEach } from "vitest"
 
@@ -28,6 +28,33 @@ describe("credentials", () => {
 		expect(creds).not.toBeNull()
 		expect(creds!.name).toBe("test-ws")
 		expect(creds!.botToken).toBe("xoxb-test-token")
+	})
+
+	it("should encrypt secrets and restrict local credential files", async () => {
+		const { storeToken } = await import("../src/lib/credentials.ts")
+		await storeToken("secure-ws", "user", "xoxp-secret-token")
+
+		const credentialPath = join(tempDir, ".config", "holla", "credentials", "secure-ws.json")
+		const keyPath = join(tempDir, ".config", "holla", ".encryption_key")
+		const raw = await readFile(credentialPath, "utf8")
+		expect(raw).not.toContain("xoxp-secret-token")
+		expect((await stat(credentialPath)).mode & 0o777).toBe(0o600)
+		expect((await stat(keyPath)).mode & 0o777).toBe(0o600)
+	})
+
+	it("should migrate legacy plaintext credentials on the next write", async () => {
+		const credentialDir = join(tempDir, ".config", "holla", "credentials")
+		await mkdir(credentialDir, { recursive: true })
+		await writeFile(
+			join(credentialDir, "legacy-ws.json"),
+			JSON.stringify({ name: "legacy-ws", userToken: "xoxp-legacy-token" }),
+		)
+		const { storeToken } = await import("../src/lib/credentials.ts")
+
+		await storeToken("legacy-ws", "user", "xoxp-new-token")
+		const raw = await readFile(join(credentialDir, "legacy-ws.json"), "utf8")
+		expect(raw).not.toContain("xoxp-new-token")
+		expect(raw).not.toContain("xoxp-legacy-token")
 	})
 
 	it("should store and retrieve a user token", async () => {
