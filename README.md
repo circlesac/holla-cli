@@ -111,6 +111,21 @@ holla slack emoji list
 holla slack team info/profile
 ```
 
+### Slack Lists
+
+Slack Lists require the `lists:read` and `lists:write` scopes in the holla Slack app.
+List IDs or full Slack List URLs are accepted. Existing workspaces must re-authorize after
+these scopes are added (`holla slack auth login --workspace <name>`).
+
+```bash
+holla slack lists read --list F123456789 --all
+holla slack lists info --list https://workspace.slack.com/lists/T123/F123
+holla slack lists create --name "Publication Schedule"
+holla slack lists add --list F123456789 --fields '[{"column_id":"Col123","rich_text":[{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"New topic"}]}]}]}'
+holla slack lists update --list F123456789 --row Rec123456 --fields '[{"column_id":"Col456","select":["Opt123"]}]'
+holla slack lists delete --list F123456789 --row Rec123456
+```
+
 ### Raw API Passthrough
 
 For any Slack API method not covered by the commands above:
