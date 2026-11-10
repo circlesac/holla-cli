@@ -24,6 +24,17 @@ password prompt is expected. Legacy plaintext records migrate automatically when
 
 ## Sending messages
 
+### Message scope
+
+Use the formal Melten Slack share shape only for channel broadcasts such as
+releases, review or decision requests, experiment results, notices, and
+incidents. A direct message or an existing one-to-one thread is a conversation:
+keep it concise, preserve the thread's language and tone, and omit the share
+title emoji, section headings, status table, and link footer unless the user
+explicitly asks for a formal share. When replying to a DM thread, answer the
+recipient's immediate question first and put any attachment or next step in
+the same short reply.
+
 ```bash
 # Send to a channel
 holla slack chat send --channel "#general" --text "Hello" -w <ws>
